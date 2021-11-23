@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "BillSplitter",
+    "slug": "BillSplitter",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  },
+  "name": "BillSplitter"
+}
