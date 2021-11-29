@@ -8,7 +8,8 @@ const ApiRouter = require('./routes/api')
 
 const app = express()
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/test'
+const MONGO_URI =
+  process.env.MONGODB_URI || 'mongodb://localhost:27017/billsplitter'
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
@@ -23,7 +24,7 @@ app.use(
   session({
     name: 'account',
     keys: ['key1'], // what does this do?
-  }),
+  })
 )
 
 app.get('/', (req, res) => {
@@ -38,7 +39,7 @@ app.use('/account', AccountRouter)
 app.use('/api/questions', ApiRouter)
 
 app.use((err, req, res, next) => {
-  res.status(500).send('There was an error!')
+  res.status(500).send({ error: err.message })
 })
 
 // set favicon

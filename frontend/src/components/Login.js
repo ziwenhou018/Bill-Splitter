@@ -11,9 +11,9 @@ const Login = () => {
   const onClickLoginButton = async () => {
     try {
       const data = await axios.post('/account/login', { username, password })
-      navigation('/')
+      navigation('/', data)
     } catch (err) {
-      alert('Sign in failed')
+      alert(err.response.data.error)
     }
   }
 

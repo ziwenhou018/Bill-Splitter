@@ -10,10 +10,14 @@ const Signup = () => {
 
   const onClickSignUpButton = async () => {
     try {
-      const data = await axios.post('/account/signup', { username, password })
-      navigation('/')
+      if (username && password) {
+        await axios.post('/account/signup', { username, password })
+        navigation('/')
+      } else {
+        alert('Username and password must not be empty!')
+      }
     } catch (err) {
-      alert('Sign up failed')
+      alert(err.response.data.error)
     }
   }
 

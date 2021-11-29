@@ -33769,13 +33769,17 @@ const Signup = () => {
 
   const onClickSignUpButton = async () => {
     try {
-      const data = await _axios.default.post('/account/signup', {
-        username,
-        password
-      });
-      navigation('/');
+      if (username && password) {
+        await _axios.default.post('/account/signup', {
+          username,
+          password
+        });
+        navigation('/');
+      } else {
+        alert('Username and password must not be empty!');
+      }
     } catch (err) {
-      alert('Sign up failed');
+      alert(err.response.data.error);
     }
   };
 
@@ -33836,9 +33840,9 @@ const Login = () => {
         username,
         password
       });
-      navigation('/');
+      navigation('/', data);
     } catch (err) {
-      alert('Sign in failed');
+      alert(err.response.data.error);
     }
   };
 
@@ -37162,7 +37166,135 @@ var reloadCSS = require('_css_loader');
 
 module.hot.dispose(reloadCSS);
 module.hot.accept(reloadCSS);
-},{"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"src/App.js":[function(require,module,exports) {
+},{"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"src/components/Friends.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _axios = _interopRequireDefault(require("axios"));
+
+var _react = _interopRequireWildcard(require("react"));
+
+var _reactRouterDom = require("react-router-dom");
+
+var _NewQuestion = _interopRequireDefault(require("./NewQuestion"));
+
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const Friends = () => {
+  const [username, setUsername] = (0, _react.useState)(null);
+  const [friends, setFriends] = (0, _react.useState)([]);
+  const [requests, setRequests] = (0, _react.useState)([]);
+  const [requested, setRequested] = (0, _react.useState)([]);
+  const [search, setSearch] = (0, _react.useState)([]);
+  const navigation = (0, _reactRouterDom.useNavigate)();
+
+  const logout = async () => {
+    _axios.default.post('/account/logout').then(() => {
+      navigation('/login');
+    });
+  };
+
+  const checkLoggedIn = async () => {
+    const {
+      data
+    } = await _axios.default.get('/account/isLoggedIn');
+    setUsername(data);
+  };
+
+  const refresh = async () => {
+    const {
+      data
+    } = await _axios.default.get('/account/');
+    setFriends(data.friends);
+    setRequests(data.requests);
+    setRequested(data.requested);
+  };
+
+  (0, _react.useEffect)(() => {
+    checkLoggedIn();
+  }, []);
+  (0, _react.useEffect)(() => {
+    if (username) {
+      refresh();
+      const interval = setInterval(() => {
+        refresh();
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [username]); // useEffect(() => {
+  //   questions.forEach(question => {
+  //     if (currQuestion._id === question._id) {
+  //       setCurrQuestion(question)
+  //     }
+  //   })
+  // }, [questions])
+
+  return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "title"
+  }, "Bill Splitter"), username ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      marginLeft: 'auto',
+      marginRight: 10,
+      marginTop: 10,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", null, username), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Log out",
+    onClick: logout
+  })) : /*#__PURE__*/_react.default.createElement("input", {
+    style: {
+      marginLeft: 'auto',
+      marginRight: 10,
+      marginTop: 10,
+      marginBottom: 10
+    },
+    className: "small-button",
+    type: "button",
+    value: "Log in",
+    onClick: () => navigation('/login')
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex',
+      height: '90%'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      backgroundColor: 'lightgray',
+      padding: '5px',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: 'gray',
+      width: '30%'
+    }
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      backgroundColor: 'lightgray',
+      padding: '5px',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: 'gray',
+      width: '70%'
+    }
+  })));
+};
+
+var _default = Friends;
+exports.default = _default;
+},{"axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js","react-router-dom":"../node_modules/react-router-dom/index.js","./NewQuestion":"src/components/NewQuestion.js"}],"src/App.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -37182,6 +37314,8 @@ var _Home = _interopRequireDefault(require("./components/Home"));
 
 require("./styles.css");
 
+var _Friends = _interopRequireDefault(require("./components/Friends"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const App = () => /*#__PURE__*/_react.default.createElement(_reactRouterDom.BrowserRouter, null, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Routes, null, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
@@ -37195,12 +37329,13 @@ const App = () => /*#__PURE__*/_react.default.createElement(_reactRouterDom.Brow
 }), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
   exact: true,
   path: "/",
-  element: /*#__PURE__*/_react.default.createElement(_Home.default, null)
-})));
+  element: /*#__PURE__*/_react.default.createElement(_Friends.default, null)
+}))); // home is friends page
+
 
 var _default = App;
 exports.default = _default;
-},{"react-router-dom":"../node_modules/react-router-dom/index.js","react":"../node_modules/react/index.js","./components/Signup":"src/components/Signup.js","./components/Login":"src/components/Login.js","./components/Home":"src/components/Home.js","./styles.css":"src/styles.css"}],"index.js":[function(require,module,exports) {
+},{"react-router-dom":"../node_modules/react-router-dom/index.js","react":"../node_modules/react/index.js","./components/Signup":"src/components/Signup.js","./components/Login":"src/components/Login.js","./components/Home":"src/components/Home.js","./styles.css":"src/styles.css","./components/Friends":"src/components/Friends.js"}],"index.js":[function(require,module,exports) {
 "use strict";
 
 var _react = _interopRequireDefault(require("react"));
@@ -37240,7 +37375,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56403" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50395" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
