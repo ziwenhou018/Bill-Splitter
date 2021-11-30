@@ -37190,6 +37190,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const Friends = () => {
   const [username, setUsername] = (0, _react.useState)(null);
+  const [bills, setBills] = (0, _react.useState)([]);
   const [friends, setFriends] = (0, _react.useState)([]);
   const [requests, setRequests] = (0, _react.useState)([]);
   const [requested, setRequested] = (0, _react.useState)([]);
@@ -37209,10 +37210,20 @@ const Friends = () => {
     setUsername(data);
   };
 
+  const addFriend = () => {
+    _axios.default.post('/api/new', {
+      host: username,
+      group: ['test']
+    }).then(res => {
+      console.log(res); // navigation(`/bill/${res._id}`)
+    });
+  };
+
   const refresh = async () => {
     const {
       data
     } = await _axios.default.get('/account/');
+    setBills(data.bills);
     setFriends(data.friends);
     setRequests(data.requests);
     setRequested(data.requested);
@@ -37280,7 +37291,23 @@ const Friends = () => {
       borderColor: 'gray',
       width: '30%'
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "text",
+    onChange: e => setSearch(e.target.value),
+    value: search,
+    placeholder: "Search friends..."
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Add Friend",
+    onClick: addFriend
+  })), friends.map(friend => /*#__PURE__*/_react.default.createElement("div", {
+    key: friend
+  }, friend))), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       backgroundColor: 'lightgray',
       padding: '5px',
@@ -37294,7 +37321,151 @@ const Friends = () => {
 
 var _default = Friends;
 exports.default = _default;
-},{"axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js","react-router-dom":"../node_modules/react-router-dom/index.js","./NewQuestion":"src/components/NewQuestion.js"}],"src/App.js":[function(require,module,exports) {
+},{"axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js","react-router-dom":"../node_modules/react-router-dom/index.js","./NewQuestion":"src/components/NewQuestion.js"}],"src/components/Bill.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _reactRouterDom = require("react-router-dom");
+
+var _axios = _interopRequireDefault(require("axios"));
+
+var _react = _interopRequireWildcard(require("react"));
+
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const Bill = () => {
+  const [username, setUsername] = (0, _react.useState)(null);
+  const [host, setHost] = (0, _react.useState)(null);
+  const [members, setMembers] = (0, _react.useState)(null);
+  const [items, setItems] = (0, _react.useState)(null);
+  const [isLoading, setIsLoading] = (0, _react.useState)(true);
+  const {
+    id
+  } = _reactRouterDom.useParams;
+  const navigation = (0, _reactRouterDom.useNavigate)();
+
+  const logout = async () => {
+    _axios.default.post('/account/logout').then(() => {
+      navigation('/login');
+    });
+  };
+
+  const checkLoggedIn = async () => {
+    const {
+      data
+    } = await _axios.default.get('/account/isLoggedIn');
+    setUsername(data);
+  };
+
+  const refresh = async () => {
+    const {
+      data
+    } = await _axios.default.get('/api/');
+    setHost(data.host);
+    setMembers(data.members);
+    setItems(data.items);
+  };
+
+  (0, _react.useEffect)(() => {
+    checkLoggedIn();
+  }, []);
+  (0, _react.useEffect)(() => {
+    if (host && members && items) {
+      setIsLoading(false);
+    }
+  }, [host, members, items]);
+  (0, _react.useEffect)(() => {
+    if (username) {
+      refresh(); // const interval = setInterval(() => {
+      //   refresh()
+      // }, 2000)
+      // return () => clearInterval(interval)
+    }
+  }, [username]);
+
+  if (isLoading) {
+    return /*#__PURE__*/_react.default.createElement("div", null);
+  }
+
+  return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "title"
+  }, "Bill Splitter"), username ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      marginLeft: 'auto',
+      marginRight: 10,
+      marginTop: 10,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", null, username), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Log out",
+    onClick: logout
+  })) : /*#__PURE__*/_react.default.createElement("input", {
+    style: {
+      marginLeft: 'auto',
+      marginRight: 10,
+      marginTop: 10,
+      marginBottom: 10
+    },
+    className: "small-button",
+    type: "button",
+    value: "Log in",
+    onClick: () => navigation('/login')
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex',
+      height: '90%'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      backgroundColor: 'lightgray',
+      padding: '5px',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: 'gray',
+      width: '30%'
+    }
+  }, Object.entries(members).map(member => /*#__PURE__*/_react.default.createElement("div", {
+    key: member.name
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: member.name,
+    onClick: () => {},
+    style: {
+      width: '97%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  })))), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      backgroundColor: 'lightgray',
+      padding: '5px',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: 'gray',
+      width: '70%'
+    }
+  })));
+};
+
+var _default = Bill;
+exports.default = _default;
+},{"react-router-dom":"../node_modules/react-router-dom/index.js","axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js"}],"src/App.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -37316,6 +37487,8 @@ require("./styles.css");
 
 var _Friends = _interopRequireDefault(require("./components/Friends"));
 
+var _Bill = _interopRequireDefault(require("./components/Bill"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const App = () => /*#__PURE__*/_react.default.createElement(_reactRouterDom.BrowserRouter, null, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Routes, null, /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
@@ -37328,6 +37501,10 @@ const App = () => /*#__PURE__*/_react.default.createElement(_reactRouterDom.Brow
   element: /*#__PURE__*/_react.default.createElement(_Login.default, null)
 }), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
   exact: true,
+  path: "/bill/:id",
+  element: /*#__PURE__*/_react.default.createElement(_Bill.default, null)
+}), /*#__PURE__*/_react.default.createElement(_reactRouterDom.Route, {
+  exact: true,
   path: "/",
   element: /*#__PURE__*/_react.default.createElement(_Friends.default, null)
 }))); // home is friends page
@@ -37335,7 +37512,7 @@ const App = () => /*#__PURE__*/_react.default.createElement(_reactRouterDom.Brow
 
 var _default = App;
 exports.default = _default;
-},{"react-router-dom":"../node_modules/react-router-dom/index.js","react":"../node_modules/react/index.js","./components/Signup":"src/components/Signup.js","./components/Login":"src/components/Login.js","./components/Home":"src/components/Home.js","./styles.css":"src/styles.css","./components/Friends":"src/components/Friends.js"}],"index.js":[function(require,module,exports) {
+},{"react-router-dom":"../node_modules/react-router-dom/index.js","react":"../node_modules/react/index.js","./components/Signup":"src/components/Signup.js","./components/Login":"src/components/Login.js","./components/Home":"src/components/Home.js","./styles.css":"src/styles.css","./components/Friends":"src/components/Friends.js","./components/Bill":"src/components/Bill.js"}],"index.js":[function(require,module,exports) {
 "use strict";
 
 var _react = _interopRequireDefault(require("react"));
@@ -37375,7 +37552,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50395" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54413" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

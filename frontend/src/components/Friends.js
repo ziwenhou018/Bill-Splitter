@@ -5,6 +5,7 @@ import NewQuestion from './NewQuestion'
 
 const Friends = () => {
   const [username, setUsername] = useState(null)
+  const [bills, setBills] = useState([])
   const [friends, setFriends] = useState([])
   const [requests, setRequests] = useState([])
   const [requested, setRequested] = useState([])
@@ -23,8 +24,16 @@ const Friends = () => {
     setUsername(data)
   }
 
+  const addFriend = () => {
+    axios.post('/api/new', { host: username, group: ['test'] }).then(res => {
+      console.log(res)
+      // navigation(`/bill/${res._id}`)
+    })
+  }
+
   const refresh = async () => {
     const { data } = await axios.get('/account/')
+    setBills(data.bills)
     setFriends(data.friends)
     setRequests(data.requests)
     setRequested(data.requested)
@@ -104,6 +113,23 @@ const Friends = () => {
             width: '30%',
           }}
         >
+          <div style={{ display: 'flex' }}>
+            <input
+              type="text"
+              onChange={e => setSearch(e.target.value)}
+              value={search}
+              placeholder="Search friends..."
+            />
+            <input
+              className="small-button"
+              type="button"
+              value="Add Friend"
+              onClick={addFriend}
+            />
+          </div>
+          {friends.map(friend => (
+            <div key={friend}>{friend}</div>
+          ))}
           {/* {questions.map(question => (
             <div key={question._id}>
               <input

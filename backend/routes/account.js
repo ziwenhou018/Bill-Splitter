@@ -23,6 +23,7 @@ router.get('/', isAuthenticated, async (req, res, next) => {
 
 router.post('/signup', async (req, res, next) => {
   const { username, password } = req.body
+  const bills = []
   const friends = []
   const requests = []
   const requested = []
@@ -30,6 +31,7 @@ router.post('/signup', async (req, res, next) => {
     await User.create({
       username,
       password,
+      bills,
       friends,
       requests,
       requested,
@@ -48,6 +50,7 @@ router.post('/login', async (req, res, next) => {
       if (password === user.password) {
         req.session.username = username
         req.session.password = password
+        req.session.bills = user.bills
         req.session.friends = user.friends
         req.session.requests = user.requests
         req.session.requested = user.requested
@@ -71,6 +74,7 @@ router.post('/login', async (req, res, next) => {
 router.post('/logout', isAuthenticated, (req, res, next) => {
   req.session.username = null
   req.session.password = null
+  req.session.bills = null
   req.session.friends = null
   req.session.requests = null
   req.session.requested = null

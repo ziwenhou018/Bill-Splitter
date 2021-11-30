@@ -36,7 +36,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/account', AccountRouter)
-app.use('/api/questions', ApiRouter)
+app.use('/api', ApiRouter)
 
 app.use((err, req, res, next) => {
   res.status(500).send({ error: err.message })
