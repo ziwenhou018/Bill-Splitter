@@ -8,10 +8,29 @@ const Bill = () => {
   const [members, setMembers] = useState(null)
   const [items, setItems] = useState(null)
 
+  const [itemText, setItemText] = useState('')
+  const [itemPrice, setItemPrice] = useState('')
+
+  const [itemSelected, setItemSelected] = useState(null)
+
   const [isLoading, setIsLoading] = useState(true)
 
-  const { id } = useParams
+  const { id } = useParams()
   const navigation = useNavigate()
+
+  const newItem = () => {
+    if (itemText in items) {
+      alert('Duplicate item name')
+    } else {
+      const dup = JSON.parse(JSON.stringify(items))
+      dup[itemText] = {
+        price: parseFloat(itemPrice),
+        members: [host],
+        taxed: true,
+      }
+      setItems(dup)
+    }
+  }
 
   const logout = async () => {
     axios.post('/account/logout').then(() => {
@@ -25,7 +44,8 @@ const Bill = () => {
   }
 
   const refresh = async () => {
-    const { data } = await axios.get('/api/')
+    const { data } = await axios.post('/api/', { id })
+    console.log(data)
     setHost(data.host)
     setMembers(data.members)
     setItems(data.items)
@@ -38,6 +58,7 @@ const Bill = () => {
   useEffect(() => {
     if (host && members && items) {
       setIsLoading(false)
+      console.log(items)
     }
   }, [host, members, items])
 
@@ -107,10 +128,10 @@ const Bill = () => {
           }}
         >
           {Object.entries(members).map(member => (
-            <div key={member.name}>
+            <div key={member[0]}>
               <input
                 type="button"
-                value={member.name}
+                value={member[0]}
                 onClick={() => {}}
                 style={{
                   width: '97%',
@@ -133,51 +154,43 @@ const Bill = () => {
             width: '70%',
           }}
         >
-          {/* {currQuestion._id ? (
-            <div>
-              <div
+          <div style={{ display: 'flex' }}>
+            <input
+              type="text"
+              onChange={e => setItemText(e.target.value)}
+              value={itemText}
+              placeholder="Fried rice"
+            />
+            <input
+              type="text"
+              onChange={e => setItemPrice(e.target.value)}
+              value={itemPrice}
+              placeholder="4.99"
+            />
+            <input
+              className="small-button"
+              type="button"
+              value="Add Item"
+              onClick={() => newItem()}
+            />
+          </div>
+          {Object.entries(items).map(item => (
+            <div key={item[0]} style={{ display: 'flex' }}>
+              <input
+                type="button"
+                value={item[0]}
+                onClick={() => {}}
                 style={{
-                  backgroundColor: 'white',
-                  padding: '5px',
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: 'gray',
-                  width: '99%',
+                  width: '50%',
+                  height: '30px',
+                  margin: '3px',
+                  fontFamily: 'Arial',
+                  fontSize: '19px',
                 }}
-              >
-                <div style={{ fontSize: '24px', margin: '3px' }}>
-                  {currQuestion.questionText}
-                </div>
-                <div style={{ fontWeight: 'bold', margin: '3px' }}>Author:</div>
-                <div style={{ margin: '3px' }}>{currQuestion.author}</div>
-                <div style={{ fontWeight: 'bold', margin: '3px' }}>Answer:</div>
-                <div style={{ margin: '3px' }}>{currQuestion.answer}</div>
-              </div>
-              {username ? (
-                <div>
-                  <div>Answer this question:</div>
-                  <div>
-                    <textarea
-                      cols="112"
-                      rows="8"
-                      className="small-input"
-                      type="text"
-                      value={answer}
-                      onChange={event => setAnswer(event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      className="small-button"
-                      type="button"
-                      value="Submit"
-                      onClick={submitAnswer}
-                    />
-                  </div>
-                </div>
-              ) : null}
+              />
+              <div>{`$${item[1].price}`}</div>
             </div>
-          ) : null} */}
+          ))}
         </div>
       </div>
     </div>

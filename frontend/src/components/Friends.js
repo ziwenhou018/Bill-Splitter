@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -9,7 +10,8 @@ const Friends = () => {
   const [friends, setFriends] = useState([])
   const [requests, setRequests] = useState([])
   const [requested, setRequested] = useState([])
-  const [search, setSearch] = useState([])
+  const [search, setSearch] = useState('')
+  const [clickedOn, setClickedOn] = useState([])
 
   const navigation = useNavigate()
 
@@ -24,11 +26,81 @@ const Friends = () => {
     setUsername(data)
   }
 
-  const addFriend = () => {
-    axios.post('/api/new', { host: username, group: ['test'] }).then(res => {
-      console.log(res)
-      // navigation(`/bill/${res._id}`)
-    })
+  const requestFriend = () => {
+    if (search === username) {
+      alert('Cannot request self!')
+    } else if (search.length > 0) {
+      axios
+        .post('/account/requestFriend', { username, request: search })
+        .then(res => {
+          setRequested(res.data)
+          alert('Requested!')
+        })
+        .catch(err => {
+          alert(err.response.data.error)
+        })
+    }
+  }
+
+  const acceptRequest = request => {
+    axios
+      .post('/account/acceptRequest', { username, request })
+      .then(res => {
+        setFriends(res.data.friends)
+        setRequests(res.data.requests)
+      })
+      .catch(err => {
+        alert(err.response.data.error)
+      })
+  }
+
+  const declineRequest = request => {
+    axios
+      .post('/account/declineRequest', { username, request })
+      .then(res => {
+        setRequests(res.data)
+      })
+      .catch(err => {
+        alert(err.response.data.error)
+      })
+  }
+
+  const removeFriend = friend => {
+    axios
+      .post('/account/removeFriend', { username, friend })
+      .then(res => {
+        setFriends(res.data)
+        if (clickedOn.includes(friend)) {
+          setClickedOn(clickedOn.filter(user => user !== friend))
+        }
+      })
+      .catch(err => {
+        alert(err.response.data.error)
+      })
+  }
+
+  const newBill = () => {
+    if (clickedOn.length < 1) {
+      if (friends.length > 0) {
+        alert('Select at least 1 friend to create a bill')
+      } else {
+        alert('Add a friend first before creating a bill')
+      }
+    } else {
+      axios
+        .post('/api/new', { host: username, group: [...clickedOn, username] })
+        .then(res => {
+          navigation(`/bill/${res.data._id}`)
+        })
+    }
+  }
+
+  const onClickFriend = friend => {
+    if (clickedOn.includes(friend)) {
+      setClickedOn(clickedOn.filter(user => user !== friend))
+    } else {
+      setClickedOn([...clickedOn, friend])
+    }
   }
 
   const refresh = async () => {
@@ -118,17 +190,123 @@ const Friends = () => {
               type="text"
               onChange={e => setSearch(e.target.value)}
               value={search}
-              placeholder="Search friends..."
+              placeholder="Search people..."
             />
             <input
               className="small-button"
               type="button"
-              value="Add Friend"
-              onClick={addFriend}
+              value="Request"
+              onClick={requestFriend}
             />
           </div>
+          <input
+            type="button"
+            value="Create new bill"
+            onClick={() => newBill()}
+            style={{
+              width: '97%',
+              height: '30px',
+              margin: '3px',
+              fontFamily: 'Arial',
+              fontSize: '19px',
+            }}
+          />
+          {requests.map(request => (
+            <div key={request} style={{ display: 'flex' }}>
+              <input
+                type="button"
+                value={request}
+                onClick={() => {}}
+                style={{
+                  width: '50%',
+                  height: '30px',
+                  margin: '3px',
+                  fontFamily: 'Arial',
+                  fontSize: '19px',
+                }}
+              />
+              <input
+                type="button"
+                value="Accept"
+                onClick={() => acceptRequest(request)}
+                style={{
+                  width: '20%',
+                  height: '30px',
+                  margin: '3px',
+                  fontFamily: 'Arial',
+                  fontSize: '19px',
+                }}
+              />
+              <input
+                type="button"
+                value="Decline"
+                onClick={() => declineRequest(request)}
+                style={{
+                  width: '20%',
+                  height: '30px',
+                  margin: '3px',
+                  fontFamily: 'Arial',
+                  fontSize: '19px',
+                }}
+              />
+            </div>
+          ))}
           {friends.map(friend => (
-            <div key={friend}>{friend}</div>
+            <div key={friend} style={{ display: 'flex' }}>
+              <input
+                type="button"
+                value="remove"
+                onClick={() => {
+                  removeFriend(friend)
+                }}
+                style={{
+                  width: '17%',
+                  height: '30px',
+                  margin: '3px',
+                  fontFamily: 'Arial',
+                  fontSize: '19px',
+                }}
+              />
+              <input
+                type="button"
+                value={friend}
+                onClick={() => onClickFriend(friend)}
+                style={
+                  clickedOn.includes(friend)
+                    ? {
+                        width: '80%',
+                        height: '30px',
+                        margin: '3px',
+                        fontFamily: 'Arial',
+                        fontSize: '19px',
+                        backgroundColor: 'lightgreen',
+                      }
+                    : {
+                        width: '80%',
+                        height: '30px',
+                        margin: '3px',
+                        fontFamily: 'Arial',
+                        fontSize: '19px',
+                      }
+                }
+              />
+            </div>
+          ))}
+          {requested.map(request => (
+            <div key={request}>
+              <input
+                type="button"
+                value={request}
+                onClick={() => {}}
+                style={{
+                  width: '10%',
+                  height: '30px',
+                  margin: '3px',
+                  fontFamily: 'Arial',
+                  fontSize: '19px',
+                }}
+              />
+            </div>
           ))}
           {/* {questions.map(question => (
             <div key={question._id}>

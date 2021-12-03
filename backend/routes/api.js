@@ -1,15 +1,16 @@
 const express = require('express')
+const { ObjectId } = require('mongodb')
 
 const isAuthenticated = require('../middlewares/isAuthenticated')
 const Bill = require('../models/bill')
 
 const router = express.Router()
 
-router.get('/', async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   const { id } = req.body
   try {
-    const bill = await Bill.find({ _id: id })
-    res.send(bill)
+    const bill = await Bill.find({ _id: ObjectId(id) })
+    res.send(bill[0])
   } catch (err) {
     next(new Error('Fetch problems'))
   }
@@ -24,7 +25,6 @@ router.post('/new', async (req, res, next) => {
   })
   try {
     const data = await Bill.create({ host, members, items })
-    console.log(data)
     res.send(data)
   } catch (err) {
     next(new Error('New bill error'))

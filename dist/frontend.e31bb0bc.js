@@ -37188,13 +37188,15 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/* eslint-disable no-alert */
 const Friends = () => {
   const [username, setUsername] = (0, _react.useState)(null);
   const [bills, setBills] = (0, _react.useState)([]);
   const [friends, setFriends] = (0, _react.useState)([]);
   const [requests, setRequests] = (0, _react.useState)([]);
   const [requested, setRequested] = (0, _react.useState)([]);
-  const [search, setSearch] = (0, _react.useState)([]);
+  const [search, setSearch] = (0, _react.useState)('');
+  const [clickedOn, setClickedOn] = (0, _react.useState)([]);
   const navigation = (0, _reactRouterDom.useNavigate)();
 
   const logout = async () => {
@@ -37210,13 +37212,83 @@ const Friends = () => {
     setUsername(data);
   };
 
-  const addFriend = () => {
-    _axios.default.post('/api/new', {
-      host: username,
-      group: ['test']
+  const requestFriend = () => {
+    if (search === username) {
+      alert('Cannot request self!');
+    } else if (search.length > 0) {
+      _axios.default.post('/account/requestFriend', {
+        username,
+        request: search
+      }).then(res => {
+        setRequested(res.data);
+        alert('Requested!');
+      }).catch(err => {
+        alert(err.response.data.error);
+      });
+    }
+  };
+
+  const acceptRequest = request => {
+    _axios.default.post('/account/acceptRequest', {
+      username,
+      request
     }).then(res => {
-      console.log(res); // navigation(`/bill/${res._id}`)
+      setFriends(res.data.friends);
+      setRequests(res.data.requests);
+    }).catch(err => {
+      alert(err.response.data.error);
     });
+  };
+
+  const declineRequest = request => {
+    _axios.default.post('/account/declineRequest', {
+      username,
+      request
+    }).then(res => {
+      setRequests(res.data);
+    }).catch(err => {
+      alert(err.response.data.error);
+    });
+  };
+
+  const removeFriend = friend => {
+    _axios.default.post('/account/removeFriend', {
+      username,
+      friend
+    }).then(res => {
+      setFriends(res.data);
+
+      if (clickedOn.includes(friend)) {
+        setClickedOn(clickedOn.filter(user => user !== friend));
+      }
+    }).catch(err => {
+      alert(err.response.data.error);
+    });
+  };
+
+  const newBill = () => {
+    if (clickedOn.length < 1) {
+      if (friends.length > 0) {
+        alert('Select at least 1 friend to create a bill');
+      } else {
+        alert('Add a friend first before creating a bill');
+      }
+    } else {
+      _axios.default.post('/api/new', {
+        host: username,
+        group: [...clickedOn, username]
+      }).then(res => {
+        navigation(`/bill/${res.data._id}`);
+      });
+    }
+  };
+
+  const onClickFriend = friend => {
+    if (clickedOn.includes(friend)) {
+      setClickedOn(clickedOn.filter(user => user !== friend));
+    } else {
+      setClickedOn([...clickedOn, friend]);
+    }
   };
 
   const refresh = async () => {
@@ -37299,15 +37371,111 @@ const Friends = () => {
     type: "text",
     onChange: e => setSearch(e.target.value),
     value: search,
-    placeholder: "Search friends..."
+    placeholder: "Search people..."
   }), /*#__PURE__*/_react.default.createElement("input", {
     className: "small-button",
     type: "button",
-    value: "Add Friend",
-    onClick: addFriend
-  })), friends.map(friend => /*#__PURE__*/_react.default.createElement("div", {
-    key: friend
-  }, friend))), /*#__PURE__*/_react.default.createElement("div", {
+    value: "Request",
+    onClick: requestFriend
+  })), /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: "Create new bill",
+    onClick: () => newBill(),
+    style: {
+      width: '97%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }), requests.map(request => /*#__PURE__*/_react.default.createElement("div", {
+    key: request,
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: request,
+    onClick: () => {},
+    style: {
+      width: '50%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: "Accept",
+    onClick: () => acceptRequest(request),
+    style: {
+      width: '20%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: "Decline",
+    onClick: () => declineRequest(request),
+    style: {
+      width: '20%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }))), friends.map(friend => /*#__PURE__*/_react.default.createElement("div", {
+    key: friend,
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: "remove",
+    onClick: () => {
+      removeFriend(friend);
+    },
+    style: {
+      width: '17%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: friend,
+    onClick: () => onClickFriend(friend),
+    style: clickedOn.includes(friend) ? {
+      width: '80%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px',
+      backgroundColor: 'lightgreen'
+    } : {
+      width: '80%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }))), requested.map(request => /*#__PURE__*/_react.default.createElement("div", {
+    key: request
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: request,
+    onClick: () => {},
+    style: {
+      width: '10%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  })))), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       backgroundColor: 'lightgray',
       padding: '5px',
@@ -37346,11 +37514,28 @@ const Bill = () => {
   const [host, setHost] = (0, _react.useState)(null);
   const [members, setMembers] = (0, _react.useState)(null);
   const [items, setItems] = (0, _react.useState)(null);
+  const [itemText, setItemText] = (0, _react.useState)('');
+  const [itemPrice, setItemPrice] = (0, _react.useState)('');
+  const [itemSelected, setItemSelected] = (0, _react.useState)(null);
   const [isLoading, setIsLoading] = (0, _react.useState)(true);
   const {
     id
-  } = _reactRouterDom.useParams;
+  } = (0, _reactRouterDom.useParams)();
   const navigation = (0, _reactRouterDom.useNavigate)();
+
+  const newItem = () => {
+    if (itemText in items) {
+      alert('Duplicate item name');
+    } else {
+      const dup = JSON.parse(JSON.stringify(items));
+      dup[itemText] = {
+        price: parseFloat(itemPrice),
+        members: [host],
+        taxed: true
+      };
+      setItems(dup);
+    }
+  };
 
   const logout = async () => {
     _axios.default.post('/account/logout').then(() => {
@@ -37368,7 +37553,10 @@ const Bill = () => {
   const refresh = async () => {
     const {
       data
-    } = await _axios.default.get('/api/');
+    } = await _axios.default.post('/api/', {
+      id
+    });
+    console.log(data);
     setHost(data.host);
     setMembers(data.members);
     setItems(data.items);
@@ -37380,6 +37568,7 @@ const Bill = () => {
   (0, _react.useEffect)(() => {
     if (host && members && items) {
       setIsLoading(false);
+      console.log(items);
     }
   }, [host, members, items]);
   (0, _react.useEffect)(() => {
@@ -37439,10 +37628,10 @@ const Bill = () => {
       width: '30%'
     }
   }, Object.entries(members).map(member => /*#__PURE__*/_react.default.createElement("div", {
-    key: member.name
+    key: member[0]
   }, /*#__PURE__*/_react.default.createElement("input", {
     type: "button",
-    value: member.name,
+    value: member[0],
     onClick: () => {},
     style: {
       width: '97%',
@@ -37460,7 +37649,42 @@ const Bill = () => {
       borderColor: 'gray',
       width: '70%'
     }
-  })));
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "text",
+    onChange: e => setItemText(e.target.value),
+    value: itemText,
+    placeholder: "Fried rice"
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    type: "text",
+    onChange: e => setItemPrice(e.target.value),
+    value: itemPrice,
+    placeholder: "4.99"
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Add Item",
+    onClick: () => newItem()
+  })), Object.entries(items).map(item => /*#__PURE__*/_react.default.createElement("div", {
+    key: item[0],
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: item[0],
+    onClick: () => {},
+    style: {
+      width: '50%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }), /*#__PURE__*/_react.default.createElement("div", null, `$${item[1].price}`))))));
 };
 
 var _default = Bill;
@@ -37552,7 +37776,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54413" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61985" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

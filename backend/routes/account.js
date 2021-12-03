@@ -85,4 +85,89 @@ router.get('/isLoggedIn', (req, res) => {
   res.send(req.session.username)
 })
 
+router.post('/requestFriend', async (req, res, next) => {
+  const { username, request } = req.body
+  try {
+    const user = await User.findOne({ username })
+    if (user.requests.includes(request)) {
+      next(new Error('User is asking to be your friend'))
+    } else if (user.requested.includes(request)) {
+      next(new Error('Already requested user'))
+    } else if (user.friends.includes(request)) {
+      next(new Error('Already friends with user'))
+    } else {
+      const user2 = await User.findOne({ username: request })
+      if (user2 == null) {
+        next(new Error('User not found'))
+      } else {
+        user.requested.unshift(request)
+        user2.requests.unshift(username)
+        await User.updateOne({ username }, { requested: user.requested })
+        await User.updateOne(
+          { username: request },
+          { requests: user2.requests }
+        )
+        res.send(user.requested)
+      }
+    }
+  } catch (err) {
+    next(new Error('Request error'))
+  }
+})
+
+router.post('/acceptRequest', async (req, res, next) => {
+  const { username, request } = req.body
+  try {
+    const user = await User.findOne({ username })
+    const user2 = await User.findOne({ username: request })
+    user.requests = user.requests.filter(value => value !== request)
+    user2.requested = user2.requested.filter(value => value !== username)
+    user.friends.push(request)
+    user2.friends.push(username)
+    await User.updateOne(
+      { username },
+      { requests: user.requests, friends: user.friends.sort() }
+    )
+    await User.updateOne(
+      { username: request },
+      { requested: user2.requested, friends: user2.friends.sort() }
+    )
+    res.send({ friends: user.friends, requests: user.requests })
+  } catch (err) {
+    next(new Error('Accept error'))
+  }
+})
+
+router.post('/declineRequest', async (req, res, next) => {
+  const { username, request } = req.body
+  try {
+    const user = await User.findOne({ username })
+    const user2 = await User.findOne({ username: request })
+    user.requests = user.requests.filter(value => value !== request)
+    user2.requested = user2.requested.filter(value => value !== username)
+    user.friends.push(request)
+    user2.friends.push(username)
+    await User.updateOne({ username }, { requests: user.requests })
+    await User.updateOne({ username: request }, { requested: user2.requested })
+    res.send(user.requests)
+  } catch (err) {
+    next(new Error('Accept error'))
+  }
+})
+
+router.post('/removeFriend', async (req, res, next) => {
+  const { username, friend } = req.body
+  try {
+    const user = await User.findOne({ username })
+    const user2 = await User.findOne({ username: friend })
+    user.friends = user.friends.filter(value => value !== friend)
+    user2.friends = user2.friends.filter(value => value !== username)
+    await User.updateOne({ username }, { friends: user.friends })
+    await User.updateOne({ username: friend }, { friends: user2.friends })
+    res.send(user.friends)
+  } catch (err) {
+    next(new Error('Accept error'))
+  }
+})
+
 module.exports = router
