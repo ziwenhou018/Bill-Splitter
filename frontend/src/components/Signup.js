@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 import React, { useState } from 'react'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
@@ -12,7 +13,7 @@ const Signup = () => {
     try {
       if (username && password) {
         await axios.post('/account/signup', { username, password })
-        navigation('/')
+        navigation('/login')
       } else {
         alert('Username and password must not be empty!')
       }
@@ -50,7 +51,6 @@ const Signup = () => {
           onClick={onClickSignUpButton}
         />
       </div>
-
       <Link to="/login">Have an account? Log In</Link>
     </div>
   )

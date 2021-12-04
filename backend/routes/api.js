@@ -20,11 +20,17 @@ router.post('/new', async (req, res, next) => {
   const { host, group } = req.body
   const members = {}
   const items = {}
+  const name = 'New Bill'
   group.forEach(member => {
     members[member] = { items: [] }
   })
   try {
-    const data = await Bill.create({ host, members, items })
+    const data = await Bill.create({
+      name,
+      host,
+      members,
+      items,
+    })
     res.send(data)
   } catch (err) {
     next(new Error('New bill error'))

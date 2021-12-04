@@ -92,6 +92,9 @@ const Friends = () => {
         .then(res => {
           navigation(`/bill/${res.data._id}`)
         })
+        .catch(err => {
+          alert(err.response.data.error)
+        })
     }
   }
 

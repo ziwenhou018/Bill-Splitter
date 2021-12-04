@@ -33762,6 +33762,7 @@ function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "functio
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
+/* eslint-disable no-alert */
 const Signup = () => {
   const [username, setUsername] = (0, _react.useState)('');
   const [password, setPassword] = (0, _react.useState)('');
@@ -33774,7 +33775,7 @@ const Signup = () => {
           username,
           password
         });
-        navigation('/');
+        navigation('/login');
       } else {
         alert('Username and password must not be empty!');
       }
@@ -37279,6 +37280,8 @@ const Friends = () => {
         group: [...clickedOn, username]
       }).then(res => {
         navigation(`/bill/${res.data._id}`);
+      }).catch(err => {
+        alert(err.response.data.error);
       });
     }
   };
@@ -37510,12 +37513,15 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const Bill = () => {
+  const [name, setName] = (0, _react.useState)('New Bill');
   const [username, setUsername] = (0, _react.useState)(null);
   const [host, setHost] = (0, _react.useState)(null);
   const [members, setMembers] = (0, _react.useState)(null);
   const [items, setItems] = (0, _react.useState)(null);
+  const [isEditingName, setIsEditingName] = (0, _react.useState)(false);
   const [itemText, setItemText] = (0, _react.useState)('');
   const [itemPrice, setItemPrice] = (0, _react.useState)('');
+  const [total, setTotal] = (0, _react.useState)(0);
   const [itemSelected, setItemSelected] = (0, _react.useState)(null);
   const [isLoading, setIsLoading] = (0, _react.useState)(true);
   const {
@@ -37533,7 +37539,11 @@ const Bill = () => {
         members: [host],
         taxed: true
       };
+      const dup2 = JSON.parse(JSON.stringify(members));
+      dup2[host].items.push(itemText);
       setItems(dup);
+      setMembers(dup2);
+      setTotal(total + parseFloat(itemPrice));
     }
   };
 
@@ -37550,6 +37560,34 @@ const Bill = () => {
     setUsername(data);
   };
 
+  const onClickItem = item => {
+    if (itemSelected === item) {
+      setItemSelected(null);
+    } else {
+      setItemSelected(item);
+    }
+  };
+
+  const onClickFriend = friend => {
+    if (itemSelected) {
+      if (items[itemSelected].members.includes(friend)) {
+        const dup = JSON.parse(JSON.stringify(items));
+        dup[itemSelected].members = dup[itemSelected].members.filter(user => user !== friend);
+        const dup2 = JSON.parse(JSON.stringify(members));
+        dup2[friend].items = dup2[friend].items.filter(item => item !== itemSelected);
+        setItems(dup);
+        setMembers(dup2);
+      } else {
+        const dup = JSON.parse(JSON.stringify(items));
+        dup[itemSelected].members.push(friend);
+        const dup2 = JSON.parse(JSON.stringify(members));
+        dup2[friend].items.push(itemSelected);
+        setItems(dup);
+        setMembers(dup2);
+      }
+    }
+  };
+
   const refresh = async () => {
     const {
       data
@@ -37557,6 +37595,7 @@ const Bill = () => {
       id
     });
     console.log(data);
+    setName(data.name);
     setHost(data.host);
     setMembers(data.members);
     setItems(data.items);
@@ -37632,9 +37671,16 @@ const Bill = () => {
   }, /*#__PURE__*/_react.default.createElement("input", {
     type: "button",
     value: member[0],
-    onClick: () => {},
-    style: {
-      width: '97%',
+    onClick: () => onClickFriend(member[0]),
+    style: members[member[0]].items.includes(itemSelected) ? {
+      width: '80%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px',
+      backgroundColor: 'lightgreen'
+    } : {
+      width: '80%',
       height: '30px',
       margin: '3px',
       fontFamily: 'Arial',
@@ -37649,7 +37695,32 @@ const Bill = () => {
       borderColor: 'gray',
       width: '70%'
     }
+  }, isEditingName ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    type: "text",
+    onChange: e => setName(e.target.value),
+    value: name,
+    placeholder: "New Bill"
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Ok",
+    onClick: () => setIsEditingName(false)
+  })) : /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
   }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "title"
+  }, name), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Edit",
+    onClick: () => setIsEditingName(true)
+  })), /*#__PURE__*/_react.default.createElement("div", null, `Total: $${total}`), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: 'flex'
     }
@@ -37675,9 +37746,27 @@ const Bill = () => {
     }
   }, /*#__PURE__*/_react.default.createElement("input", {
     type: "button",
-    value: item[0],
+    value: "remove",
     onClick: () => {},
     style: {
+      width: '17%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px'
+    }
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    type: "button",
+    value: item[0],
+    onClick: () => onClickItem(item[0]),
+    style: item[0] === itemSelected ? {
+      width: '50%',
+      height: '30px',
+      margin: '3px',
+      fontFamily: 'Arial',
+      fontSize: '19px',
+      backgroundColor: 'lightgreen'
+    } : {
       width: '50%',
       height: '30px',
       margin: '3px',
@@ -37776,7 +37865,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61985" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58048" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

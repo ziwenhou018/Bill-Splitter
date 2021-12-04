@@ -3,14 +3,17 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 
 const Bill = () => {
+  const [name, setName] = useState('New Bill')
   const [username, setUsername] = useState(null)
   const [host, setHost] = useState(null)
   const [members, setMembers] = useState(null)
   const [items, setItems] = useState(null)
 
+  const [isEditingName, setIsEditingName] = useState(false)
   const [itemText, setItemText] = useState('')
   const [itemPrice, setItemPrice] = useState('')
 
+  const [total, setTotal] = useState(0)
   const [itemSelected, setItemSelected] = useState(null)
 
   const [isLoading, setIsLoading] = useState(true)
@@ -28,7 +31,11 @@ const Bill = () => {
         members: [host],
         taxed: true,
       }
+      const dup2 = JSON.parse(JSON.stringify(members))
+      dup2[host].items.push(itemText)
       setItems(dup)
+      setMembers(dup2)
+      setTotal(total + parseFloat(itemPrice))
     }
   }
 
@@ -43,9 +50,42 @@ const Bill = () => {
     setUsername(data)
   }
 
+  const onClickItem = item => {
+    if (itemSelected === item) {
+      setItemSelected(null)
+    } else {
+      setItemSelected(item)
+    }
+  }
+
+  const onClickFriend = friend => {
+    if (itemSelected) {
+      if (items[itemSelected].members.includes(friend)) {
+        const dup = JSON.parse(JSON.stringify(items))
+        dup[itemSelected].members = dup[itemSelected].members.filter(
+          user => user !== friend
+        )
+        const dup2 = JSON.parse(JSON.stringify(members))
+        dup2[friend].items = dup2[friend].items.filter(
+          item => item !== itemSelected
+        )
+        setItems(dup)
+        setMembers(dup2)
+      } else {
+        const dup = JSON.parse(JSON.stringify(items))
+        dup[itemSelected].members.push(friend)
+        const dup2 = JSON.parse(JSON.stringify(members))
+        dup2[friend].items.push(itemSelected)
+        setItems(dup)
+        setMembers(dup2)
+      }
+    }
+  }
+
   const refresh = async () => {
     const { data } = await axios.post('/api/', { id })
     console.log(data)
+    setName(data.name)
     setHost(data.host)
     setMembers(data.members)
     setItems(data.items)
@@ -132,14 +172,25 @@ const Bill = () => {
               <input
                 type="button"
                 value={member[0]}
-                onClick={() => {}}
-                style={{
-                  width: '97%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
+                onClick={() => onClickFriend(member[0])}
+                style={
+                  members[member[0]].items.includes(itemSelected)
+                    ? {
+                        width: '80%',
+                        height: '30px',
+                        margin: '3px',
+                        fontFamily: 'Arial',
+                        fontSize: '19px',
+                        backgroundColor: 'lightgreen',
+                      }
+                    : {
+                        width: '80%',
+                        height: '30px',
+                        margin: '3px',
+                        fontFamily: 'Arial',
+                        fontSize: '19px',
+                      }
+                }
               />
             </div>
           ))}
@@ -154,6 +205,33 @@ const Bill = () => {
             width: '70%',
           }}
         >
+          {isEditingName ? (
+            <div style={{ display: 'flex' }}>
+              <input
+                type="text"
+                onChange={e => setName(e.target.value)}
+                value={name}
+                placeholder="New Bill"
+              />
+              <input
+                className="small-button"
+                type="button"
+                value="Ok"
+                onClick={() => setIsEditingName(false)}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex' }}>
+              <div className="title">{name}</div>
+              <input
+                className="small-button"
+                type="button"
+                value="Edit"
+                onClick={() => setIsEditingName(true)}
+              />
+            </div>
+          )}
+          <div>{`Total: $${total}`}</div>
           <div style={{ display: 'flex' }}>
             <input
               type="text"
@@ -178,15 +256,38 @@ const Bill = () => {
             <div key={item[0]} style={{ display: 'flex' }}>
               <input
                 type="button"
-                value={item[0]}
+                value="remove"
                 onClick={() => {}}
                 style={{
-                  width: '50%',
+                  width: '17%',
                   height: '30px',
                   margin: '3px',
                   fontFamily: 'Arial',
                   fontSize: '19px',
                 }}
+              />
+              <input
+                type="button"
+                value={item[0]}
+                onClick={() => onClickItem(item[0])}
+                style={
+                  item[0] === itemSelected
+                    ? {
+                        width: '50%',
+                        height: '30px',
+                        margin: '3px',
+                        fontFamily: 'Arial',
+                        fontSize: '19px',
+                        backgroundColor: 'lightgreen',
+                      }
+                    : {
+                        width: '50%',
+                        height: '30px',
+                        margin: '3px',
+                        fontFamily: 'Arial',
+                        fontSize: '19px',
+                      }
+                }
               />
               <div>{`$${item[1].price}`}</div>
             </div>
