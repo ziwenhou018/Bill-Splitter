@@ -8,10 +8,13 @@ const router = express.Router()
 router.get('/', isAuthenticated, async (req, res, next) => {
   try {
     const user = await User.findOne({ username: req.session.username })
+    req.session.bills = user.bills
     req.session.friends = user.friends
     req.session.requests = user.requests
     req.session.requested = user.requested
+    console.log(user)
     res.send({
+      bills: user.bills,
       friends: user.friends,
       requests: user.requests,
       requested: user.requested,

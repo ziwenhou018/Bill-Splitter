@@ -39,7 +39,7 @@ app.use('/account', AccountRouter)
 app.use('/api', ApiRouter)
 
 app.use((err, req, res, next) => {
-  res.status(500).send({ error: err.message })
+  res.status(200).send(`Error: ${err.message}`)
 })
 
 // set favicon

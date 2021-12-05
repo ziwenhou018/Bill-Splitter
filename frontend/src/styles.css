@@ -85,3 +85,71 @@ body {
 .ReactModal__Overlay--before-close {
   opacity: 0;
 }
+
+.remove {
+  box-shadow: 0px 0px 0px 2px #e70d0d;
+  background: linear-gradient(to bottom, #eb0f0f8e 5%, #cf2121f1 100%);
+  background-color: #eb0f0f8e;
+  border-radius: 10px;
+  border: 1px solid #f16868;
+  display: inline-block;
+  cursor: pointer;
+  color: #ffffff;
+  font-family: Arial;
+  font-size: 13px;
+  padding: 4px 10px;
+  text-decoration: none;
+  text-shadow: 0px 1px 0px #f16868;
+  margin: 5px;
+}
+.remove:hover {
+  background: linear-gradient(to bottom, #cf2121f1 5%, #ca37138e 100%);
+  background-color: #ca37138e;
+}
+.remove:active {
+  position: relative;
+  top: 1px;
+}
+
+.selectable {
+  border-radius: 5px;
+  border: 1px solid;
+  cursor: pointer;
+  font-family: Arial;
+  font-size: 19px;
+  margin: 3px;
+}
+.selectable:hover {
+  background-color: #c6f5b48e;
+}
+.selectable:active {
+  position: relative;
+  top: 1px;
+}
+
+.big-button {
+  width: 97%;
+  height: 30px;
+  margin: 3px;
+  font-family: Arial;
+  font-size: 19px;
+  border-radius: 10px;
+  border: 1px solid #020f1f8e;
+  background-color: rgb(70, 100, 184);
+  color: white;
+  cursor: pointer;
+}
+.big-button:hover {
+  background-color: #667cb9;
+}
+.big-button:active {
+  position: relative;
+  top: 1px;
+}
+
+.mini-title {
+  font-size: 20px;
+  margin: 3px;
+  margin-left: 8px;
+  text-decoration: underline;
+}

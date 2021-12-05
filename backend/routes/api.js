@@ -2,6 +2,7 @@ const express = require('express')
 const { ObjectId } = require('mongodb')
 
 const isAuthenticated = require('../middlewares/isAuthenticated')
+const User = require('../models/user')
 const Bill = require('../models/bill')
 
 const router = express.Router()
@@ -31,6 +32,8 @@ router.post('/new', async (req, res, next) => {
       members,
       items,
     })
+    const user = await User.findOne({ username: host })
+    User.updateOne({ username: host }, { bills: [...user.bills, data._id] })
     res.send(data)
   } catch (err) {
     next(new Error('New bill error'))

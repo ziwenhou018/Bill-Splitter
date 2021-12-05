@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 import React, { useState } from 'react'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
@@ -9,11 +10,18 @@ const Login = () => {
   const navigation = useNavigate()
 
   const onClickLoginButton = async () => {
-    try {
-      const data = await axios.post('/account/login', { username, password })
-      navigation('/', data)
-    } catch (err) {
-      alert(err.response.data.error)
+    if (username && password) {
+      const { data } = await axios.post('/account/login', {
+        username,
+        password,
+      })
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data)
+      } else {
+        navigation('/', data)
+      }
+    } else {
+      alert('Username and password must not be empty!')
     }
   }
 

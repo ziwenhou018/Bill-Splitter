@@ -33769,18 +33769,21 @@ const Signup = () => {
   const navigation = (0, _reactRouterDom.useNavigate)();
 
   const onClickSignUpButton = async () => {
-    try {
-      if (username && password) {
-        await _axios.default.post('/account/signup', {
-          username,
-          password
-        });
-        navigation('/login');
+    if (username && password) {
+      const {
+        data
+      } = await _axios.default.post('/account/signup', {
+        username,
+        password
+      });
+
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data);
       } else {
-        alert('Username and password must not be empty!');
+        navigation('/login');
       }
-    } catch (err) {
-      alert(err.response.data.error);
+    } else {
+      alert('Username and password must not be empty!');
     }
   };
 
@@ -33830,20 +33833,28 @@ function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "functio
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
+/* eslint-disable no-alert */
 const Login = () => {
   const [username, setUsername] = (0, _react.useState)('');
   const [password, setPassword] = (0, _react.useState)('');
   const navigation = (0, _reactRouterDom.useNavigate)();
 
   const onClickLoginButton = async () => {
-    try {
-      const data = await _axios.default.post('/account/login', {
+    if (username && password) {
+      const {
+        data
+      } = await _axios.default.post('/account/login', {
         username,
         password
       });
-      navigation('/', data);
-    } catch (err) {
-      alert(err.response.data.error);
+
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data);
+      } else {
+        navigation('/', data);
+      }
+    } else {
+      alert('Username and password must not be empty!');
     }
   };
 
@@ -37167,7 +37178,36 @@ var reloadCSS = require('_css_loader');
 
 module.hot.dispose(reloadCSS);
 module.hot.accept(reloadCSS);
-},{"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"src/components/Friends.js":[function(require,module,exports) {
+},{"_css_loader":"../node_modules/parcel-bundler/src/builtins/css-loader.js"}],"src/styles.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.rightButtonSelected = exports.rightButton = exports.leftButtonSelected = exports.leftButton = void 0;
+const leftButton = {
+  width: '80%',
+  height: '30px'
+};
+exports.leftButton = leftButton;
+const leftButtonSelected = {
+  width: '80%',
+  height: '30px',
+  backgroundColor: 'lightgreen'
+};
+exports.leftButtonSelected = leftButtonSelected;
+const rightButton = {
+  width: '50%',
+  height: '30px'
+};
+exports.rightButton = rightButton;
+const rightButtonSelected = {
+  width: '50%',
+  height: '30px',
+  backgroundColor: 'lightgreen'
+};
+exports.rightButtonSelected = rightButtonSelected;
+},{}],"src/components/Friends.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -37181,7 +37221,7 @@ var _react = _interopRequireWildcard(require("react"));
 
 var _reactRouterDom = require("react-router-dom");
 
-var _NewQuestion = _interopRequireDefault(require("./NewQuestion"));
+var _styles = require("../styles");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -37198,6 +37238,7 @@ const Friends = () => {
   const [requested, setRequested] = (0, _react.useState)([]);
   const [search, setSearch] = (0, _react.useState)('');
   const [clickedOn, setClickedOn] = (0, _react.useState)([]);
+  const [isLoading, setIsLoading] = (0, _react.useState)(true);
   const navigation = (0, _reactRouterDom.useNavigate)();
 
   const logout = async () => {
@@ -37210,64 +37251,85 @@ const Friends = () => {
     const {
       data
     } = await _axios.default.get('/account/isLoggedIn');
-    setUsername(data);
-  };
 
-  const requestFriend = () => {
-    if (search === username) {
-      alert('Cannot request self!');
-    } else if (search.length > 0) {
-      _axios.default.post('/account/requestFriend', {
-        username,
-        request: search
-      }).then(res => {
-        setRequested(res.data);
-        alert('Requested!');
-      }).catch(err => {
-        alert(err.response.data.error);
-      });
+    if (data) {
+      setUsername(data);
+    } else {
+      navigation('/login');
     }
   };
 
-  const acceptRequest = request => {
-    _axios.default.post('/account/acceptRequest', {
-      username,
-      request
-    }).then(res => {
-      setFriends(res.data.friends);
-      setRequests(res.data.requests);
-    }).catch(err => {
-      alert(err.response.data.error);
-    });
+  const requestFriend = async () => {
+    if (search === username) {
+      alert('Cannot request self!');
+    } else if (search.length > 0) {
+      const {
+        data
+      } = await _axios.default.post('/account/requestFriend', {
+        username,
+        request: search
+      });
+
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data);
+      } else {
+        setRequested(data);
+        alert('Requested!');
+      }
+    }
   };
 
-  const declineRequest = request => {
-    _axios.default.post('/account/declineRequest', {
+  const acceptRequest = async request => {
+    const {
+      data
+    } = await _axios.default.post('/account/acceptRequest', {
       username,
       request
-    }).then(res => {
-      setRequests(res.data);
-    }).catch(err => {
-      alert(err.response.data.error);
     });
+
+    if (typeof data === 'string' && data.startsWith('Error')) {
+      alert(data);
+    } else {
+      setFriends(data.friends);
+      setRequests(data.requests);
+    }
   };
 
-  const removeFriend = friend => {
-    _axios.default.post('/account/removeFriend', {
+  const declineRequest = async request => {
+    const {
+      data
+    } = await _axios.default.post('/account/declineRequest', {
+      username,
+      request
+    });
+
+    if (typeof data === 'string' && data.startsWith('Error')) {
+      alert(data);
+    } else {
+      setRequests(data);
+    }
+  };
+
+  const removeFriend = async friend => {
+    const {
+      data
+    } = await _axios.default.post('/account/removeFriend', {
       username,
       friend
-    }).then(res => {
-      setFriends(res.data);
+    });
+
+    if (typeof data === 'string' && data.startsWith('Error')) {
+      alert(data);
+    } else {
+      setFriends(data);
 
       if (clickedOn.includes(friend)) {
         setClickedOn(clickedOn.filter(user => user !== friend));
       }
-    }).catch(err => {
-      alert(err.response.data.error);
-    });
+    }
   };
 
-  const newBill = () => {
+  const newBill = async () => {
     if (clickedOn.length < 1) {
       if (friends.length > 0) {
         alert('Select at least 1 friend to create a bill');
@@ -37275,14 +37337,18 @@ const Friends = () => {
         alert('Add a friend first before creating a bill');
       }
     } else {
-      _axios.default.post('/api/new', {
+      const {
+        data
+      } = await _axios.default.post('/api/new', {
         host: username,
         group: [...clickedOn, username]
-      }).then(res => {
-        navigation(`/bill/${res.data._id}`);
-      }).catch(err => {
-        alert(err.response.data.error);
       });
+
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data);
+      } else {
+        navigation(`/bill/${data._id}`);
+      }
     }
   };
 
@@ -37310,312 +37376,11 @@ const Friends = () => {
   (0, _react.useEffect)(() => {
     if (username) {
       refresh();
+      setIsLoading(false);
       const interval = setInterval(() => {
         refresh();
       }, 2000);
       return () => clearInterval(interval);
-    }
-  }, [username]); // useEffect(() => {
-  //   questions.forEach(question => {
-  //     if (currQuestion._id === question._id) {
-  //       setCurrQuestion(question)
-  //     }
-  //   })
-  // }, [questions])
-
-  return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: 'flex'
-    }
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    className: "title"
-  }, "Bill Splitter"), username ? /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      marginLeft: 'auto',
-      marginRight: 10,
-      marginTop: 10,
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/_react.default.createElement("div", null, username), /*#__PURE__*/_react.default.createElement("input", {
-    className: "small-button",
-    type: "button",
-    value: "Log out",
-    onClick: logout
-  })) : /*#__PURE__*/_react.default.createElement("input", {
-    style: {
-      marginLeft: 'auto',
-      marginRight: 10,
-      marginTop: 10,
-      marginBottom: 10
-    },
-    className: "small-button",
-    type: "button",
-    value: "Log in",
-    onClick: () => navigation('/login')
-  })), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: 'flex',
-      height: '90%'
-    }
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      backgroundColor: 'lightgray',
-      padding: '5px',
-      borderWidth: '1px',
-      borderStyle: 'solid',
-      borderColor: 'gray',
-      width: '30%'
-    }
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      display: 'flex'
-    }
-  }, /*#__PURE__*/_react.default.createElement("input", {
-    type: "text",
-    onChange: e => setSearch(e.target.value),
-    value: search,
-    placeholder: "Search people..."
-  }), /*#__PURE__*/_react.default.createElement("input", {
-    className: "small-button",
-    type: "button",
-    value: "Request",
-    onClick: requestFriend
-  })), /*#__PURE__*/_react.default.createElement("input", {
-    type: "button",
-    value: "Create new bill",
-    onClick: () => newBill(),
-    style: {
-      width: '97%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  }), requests.map(request => /*#__PURE__*/_react.default.createElement("div", {
-    key: request,
-    style: {
-      display: 'flex'
-    }
-  }, /*#__PURE__*/_react.default.createElement("input", {
-    type: "button",
-    value: request,
-    onClick: () => {},
-    style: {
-      width: '50%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  }), /*#__PURE__*/_react.default.createElement("input", {
-    type: "button",
-    value: "Accept",
-    onClick: () => acceptRequest(request),
-    style: {
-      width: '20%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  }), /*#__PURE__*/_react.default.createElement("input", {
-    type: "button",
-    value: "Decline",
-    onClick: () => declineRequest(request),
-    style: {
-      width: '20%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  }))), friends.map(friend => /*#__PURE__*/_react.default.createElement("div", {
-    key: friend,
-    style: {
-      display: 'flex'
-    }
-  }, /*#__PURE__*/_react.default.createElement("input", {
-    type: "button",
-    value: "remove",
-    onClick: () => {
-      removeFriend(friend);
-    },
-    style: {
-      width: '17%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  }), /*#__PURE__*/_react.default.createElement("input", {
-    type: "button",
-    value: friend,
-    onClick: () => onClickFriend(friend),
-    style: clickedOn.includes(friend) ? {
-      width: '80%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px',
-      backgroundColor: 'lightgreen'
-    } : {
-      width: '80%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  }))), requested.map(request => /*#__PURE__*/_react.default.createElement("div", {
-    key: request
-  }, /*#__PURE__*/_react.default.createElement("input", {
-    type: "button",
-    value: request,
-    onClick: () => {},
-    style: {
-      width: '10%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  })))), /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      backgroundColor: 'lightgray',
-      padding: '5px',
-      borderWidth: '1px',
-      borderStyle: 'solid',
-      borderColor: 'gray',
-      width: '70%'
-    }
-  })));
-};
-
-var _default = Friends;
-exports.default = _default;
-},{"axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js","react-router-dom":"../node_modules/react-router-dom/index.js","./NewQuestion":"src/components/NewQuestion.js"}],"src/components/Bill.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _reactRouterDom = require("react-router-dom");
-
-var _axios = _interopRequireDefault(require("axios"));
-
-var _react = _interopRequireWildcard(require("react"));
-
-function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
-
-function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const Bill = () => {
-  const [name, setName] = (0, _react.useState)('New Bill');
-  const [username, setUsername] = (0, _react.useState)(null);
-  const [host, setHost] = (0, _react.useState)(null);
-  const [members, setMembers] = (0, _react.useState)(null);
-  const [items, setItems] = (0, _react.useState)(null);
-  const [isEditingName, setIsEditingName] = (0, _react.useState)(false);
-  const [itemText, setItemText] = (0, _react.useState)('');
-  const [itemPrice, setItemPrice] = (0, _react.useState)('');
-  const [total, setTotal] = (0, _react.useState)(0);
-  const [itemSelected, setItemSelected] = (0, _react.useState)(null);
-  const [isLoading, setIsLoading] = (0, _react.useState)(true);
-  const {
-    id
-  } = (0, _reactRouterDom.useParams)();
-  const navigation = (0, _reactRouterDom.useNavigate)();
-
-  const newItem = () => {
-    if (itemText in items) {
-      alert('Duplicate item name');
-    } else {
-      const dup = JSON.parse(JSON.stringify(items));
-      dup[itemText] = {
-        price: parseFloat(itemPrice),
-        members: [host],
-        taxed: true
-      };
-      const dup2 = JSON.parse(JSON.stringify(members));
-      dup2[host].items.push(itemText);
-      setItems(dup);
-      setMembers(dup2);
-      setTotal(total + parseFloat(itemPrice));
-    }
-  };
-
-  const logout = async () => {
-    _axios.default.post('/account/logout').then(() => {
-      navigation('/login');
-    });
-  };
-
-  const checkLoggedIn = async () => {
-    const {
-      data
-    } = await _axios.default.get('/account/isLoggedIn');
-    setUsername(data);
-  };
-
-  const onClickItem = item => {
-    if (itemSelected === item) {
-      setItemSelected(null);
-    } else {
-      setItemSelected(item);
-    }
-  };
-
-  const onClickFriend = friend => {
-    if (itemSelected) {
-      if (items[itemSelected].members.includes(friend)) {
-        const dup = JSON.parse(JSON.stringify(items));
-        dup[itemSelected].members = dup[itemSelected].members.filter(user => user !== friend);
-        const dup2 = JSON.parse(JSON.stringify(members));
-        dup2[friend].items = dup2[friend].items.filter(item => item !== itemSelected);
-        setItems(dup);
-        setMembers(dup2);
-      } else {
-        const dup = JSON.parse(JSON.stringify(items));
-        dup[itemSelected].members.push(friend);
-        const dup2 = JSON.parse(JSON.stringify(members));
-        dup2[friend].items.push(itemSelected);
-        setItems(dup);
-        setMembers(dup2);
-      }
-    }
-  };
-
-  const refresh = async () => {
-    const {
-      data
-    } = await _axios.default.post('/api/', {
-      id
-    });
-    console.log(data);
-    setName(data.name);
-    setHost(data.host);
-    setMembers(data.members);
-    setItems(data.items);
-  };
-
-  (0, _react.useEffect)(() => {
-    checkLoggedIn();
-  }, []);
-  (0, _react.useEffect)(() => {
-    if (host && members && items) {
-      setIsLoading(false);
-      console.log(items);
-    }
-  }, [host, members, items]);
-  (0, _react.useEffect)(() => {
-    if (username) {
-      refresh(); // const interval = setInterval(() => {
-      //   refresh()
-      // }, 2000)
-      // return () => clearInterval(interval)
     }
   }, [username]);
 
@@ -37666,27 +37431,350 @@ const Bill = () => {
       borderColor: 'gray',
       width: '30%'
     }
-  }, Object.entries(members).map(member => /*#__PURE__*/_react.default.createElement("div", {
-    key: member[0]
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
   }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-input",
+    type: "text",
+    onChange: e => setSearch(e.target.value),
+    value: search,
+    placeholder: "Search people..."
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Request",
+    onClick: requestFriend
+  })), /*#__PURE__*/_react.default.createElement("input", {
+    className: "big-button",
+    type: "button",
+    value: "Create new bill",
+    onClick: () => newBill(),
+    style: {
+      marginBottom: '20px'
+    }
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mini-title"
+  }, "Friends"), requests.map(request => /*#__PURE__*/_react.default.createElement("div", {
+    key: request,
+    style: {
+      display: 'flex',
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "selectable",
+    type: "button",
+    value: request,
+    onClick: () => {}
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "accept",
+    onClick: () => acceptRequest(request)
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "decline",
+    onClick: () => declineRequest(request)
+  }))), friends.map(friend => /*#__PURE__*/_react.default.createElement("div", {
+    key: friend,
+    style: {
+      display: 'flex',
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "remove",
+    type: "button",
+    value: "remove",
+    onClick: () => {
+      removeFriend(friend);
+    }
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "selectable",
+    type: "button",
+    value: friend,
+    onClick: () => onClickFriend(friend),
+    style: clickedOn.includes(friend) ? _styles.leftButtonSelected : _styles.leftButton
+  }))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "mini-title"
+  }, "Requested"), requested.map(request => /*#__PURE__*/_react.default.createElement("div", {
+    key: request
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "selectable",
+    type: "button",
+    value: request,
+    onClick: () => {},
+    style: _styles.leftButton
+  })))), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      backgroundColor: 'lightgray',
+      padding: '5px',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: 'gray',
+      width: '70%'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "title"
+  }, "Past Transactions"))));
+};
+
+var _default = Friends;
+exports.default = _default;
+},{"axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js","react-router-dom":"../node_modules/react-router-dom/index.js","../styles":"src/styles.js"}],"src/components/Bill.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _reactRouterDom = require("react-router-dom");
+
+var _axios = _interopRequireDefault(require("axios"));
+
+var _react = _interopRequireWildcard(require("react"));
+
+var _styles = require("../styles");
+
+function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+
+function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/* eslint-disable no-alert */
+const Bill = () => {
+  const [name, setName] = (0, _react.useState)('New Bill');
+  const [username, setUsername] = (0, _react.useState)(null);
+  const [host, setHost] = (0, _react.useState)(null);
+  const [members, setMembers] = (0, _react.useState)(null);
+  const [items, setItems] = (0, _react.useState)(null);
+  const [isEditingName, setIsEditingName] = (0, _react.useState)(false);
+  const [itemText, setItemText] = (0, _react.useState)('');
+  const [itemPrice, setItemPrice] = (0, _react.useState)('');
+  const [total, setTotal] = (0, _react.useState)(0);
+  const [payments, setPayments] = (0, _react.useState)([]);
+  const [itemSelected, setItemSelected] = (0, _react.useState)(null);
+  const [isLoading, setIsLoading] = (0, _react.useState)(true);
+  const {
+    id
+  } = (0, _reactRouterDom.useParams)();
+  const navigation = (0, _reactRouterDom.useNavigate)();
+
+  const setItemPriceModified = price => {
+    let periodCount = 0;
+    let valsAfterPeriod = 0;
+
+    for (let i = 0; i < price.length; i++) {
+      const c = price.charAt(i);
+
+      if (c === '.') {
+        if (i === 0) return;
+        periodCount += 1;
+        if (periodCount > 1) return;
+      } else if (!(c >= '0' && c <= '9')) return;else if (periodCount > 0) {
+        valsAfterPeriod += 1;
+        if (valsAfterPeriod > 2) return;
+      }
+    }
+
+    setItemPrice(price);
+  };
+
+  const getItemPrice = () => parseFloat(itemPrice);
+
+  const setPaymentsModified = () => {
+    const dup = JSON.parse(JSON.stringify(payments));
+    let sum = 0;
+    Object.entries(members).forEach(member => {
+      dup[member[0]] = member[1].items.length > 0 ? member[1].items.reduce((prevVal, curVal) => prevVal + Math.round(items[curVal].price / items[curVal].members.length * 100) / 100, 0) : 0;
+      sum += dup[member[0]];
+    });
+    dup[host] += total - sum;
+    setPayments(dup);
+  };
+
+  const newItem = () => {
+    if (itemText && itemPrice) {
+      if (itemText in items) {
+        alert('Duplicate item name');
+      } else {
+        const dup = JSON.parse(JSON.stringify(items));
+        dup[itemText] = {
+          price: getItemPrice(),
+          members: [host],
+          taxed: true
+        };
+        const dup2 = JSON.parse(JSON.stringify(members));
+        dup2[host].items.push(itemText);
+        setItems(dup);
+        setMembers(dup2);
+        setTotal(total + getItemPrice());
+      }
+    } else {
+      alert('Please fill out the name and price of the item');
+    }
+  };
+
+  const logout = async () => {
+    _axios.default.post('/account/logout').then(() => {
+      navigation('/login');
+    });
+  };
+
+  const checkLoggedIn = async () => {
+    const {
+      data
+    } = await _axios.default.get('/account/isLoggedIn');
+
+    if (data) {
+      setUsername(data);
+    } else {
+      navigation('/login');
+    }
+  };
+
+  const onClickItem = item => {
+    if (itemSelected === item) {
+      setItemSelected(null);
+    } else {
+      setItemSelected(item);
+    }
+  };
+
+  const onClickFriend = friend => {
+    if (itemSelected) {
+      if (items[itemSelected].members.includes(friend)) {
+        const dup = JSON.parse(JSON.stringify(items));
+        dup[itemSelected].members = dup[itemSelected].members.filter(user => user !== friend);
+        const dup2 = JSON.parse(JSON.stringify(members));
+        dup2[friend].items = dup2[friend].items.filter(item => item !== itemSelected);
+        setItems(dup);
+        setMembers(dup2);
+      } else {
+        const dup = JSON.parse(JSON.stringify(items));
+        dup[itemSelected].members.push(friend);
+        const dup2 = JSON.parse(JSON.stringify(members));
+        dup2[friend].items.push(itemSelected);
+        setItems(dup);
+        setMembers(dup2);
+      }
+    }
+  };
+
+  const removeItem = item => {
+    const dup = JSON.parse(JSON.stringify(items));
+    const dup2 = JSON.parse(JSON.stringify(members));
+    dup[item].members.forEach(member => {
+      dup2[member].items = dup2[member].items.filter(it => it !== item);
+    });
+    setTotal(total - dup[item].price);
+    delete dup[item];
+    setItems(dup);
+    setMembers(dup2);
+  };
+
+  const refresh = async () => {
+    const {
+      data
+    } = await _axios.default.post('/api/', {
+      id
+    });
+    setName(data.name);
+    setHost(data.host);
+    setMembers(data.members);
+    setItems(data.items);
+    const names = {};
+    Object.entries(data.members).forEach(member => {
+      names[member[0]] = 0;
+    });
+    setPayments(names);
+  };
+
+  (0, _react.useEffect)(() => {
+    checkLoggedIn();
+  }, []);
+  (0, _react.useEffect)(() => {
+    if (host && members && items) {
+      setIsLoading(false);
+      setPaymentsModified();
+    }
+  }, [host, members, items]);
+  (0, _react.useEffect)(() => {
+    if (username) {
+      refresh(); // const interval = setInterval(() => {
+      //   refresh()
+      // }, 2000)
+      // return () => clearInterval(interval)
+    }
+  }, [username]);
+
+  if (isLoading) {
+    return /*#__PURE__*/_react.default.createElement("div", null);
+  }
+
+  return /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("div", {
+    className: "title"
+  }, "Bill Splitter"), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Back",
+    onClick: () => navigation('/')
+  })), username ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      marginLeft: 'auto',
+      marginRight: 10,
+      marginTop: 10,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", null, username), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Log out",
+    onClick: logout
+  })) : /*#__PURE__*/_react.default.createElement("input", {
+    style: {
+      marginLeft: 'auto',
+      marginRight: 10,
+      marginTop: 10,
+      marginBottom: 10
+    },
+    className: "small-button",
+    type: "button",
+    value: "Log in",
+    onClick: () => navigation('/login')
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex',
+      height: '90%'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      backgroundColor: 'lightgray',
+      padding: '5px',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: 'gray',
+      width: '30%'
+    }
+  }, Object.entries(members).map(member => /*#__PURE__*/_react.default.createElement("div", {
+    key: member[0],
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "selectable",
     type: "button",
     value: member[0],
     onClick: () => onClickFriend(member[0]),
-    style: members[member[0]].items.includes(itemSelected) ? {
-      width: '80%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px',
-      backgroundColor: 'lightgreen'
-    } : {
-      width: '80%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
-  })))), /*#__PURE__*/_react.default.createElement("div", {
+    style: members[member[0]].items.includes(itemSelected) ? _styles.leftButtonSelected : _styles.leftButton
+  }), /*#__PURE__*/_react.default.createElement("div", null, `$${payments[member[0]]}`)))), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       backgroundColor: 'lightgray',
       padding: '5px',
@@ -37700,6 +37788,7 @@ const Bill = () => {
       display: 'flex'
     }
   }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-input",
     type: "text",
     onChange: e => setName(e.target.value),
     value: name,
@@ -37725,13 +37814,15 @@ const Bill = () => {
       display: 'flex'
     }
   }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-input",
     type: "text",
     onChange: e => setItemText(e.target.value),
     value: itemText,
     placeholder: "Fried rice"
   }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-input",
     type: "text",
-    onChange: e => setItemPrice(e.target.value),
+    onChange: e => setItemPriceModified(e.target.value),
     value: itemPrice,
     placeholder: "4.99"
   }), /*#__PURE__*/_react.default.createElement("input", {
@@ -37745,40 +37836,22 @@ const Bill = () => {
       display: 'flex'
     }
   }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "remove",
     type: "button",
     value: "remove",
-    onClick: () => {},
-    style: {
-      width: '17%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
+    onClick: () => removeItem(item[0])
   }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "selectable",
     type: "button",
     value: item[0],
     onClick: () => onClickItem(item[0]),
-    style: item[0] === itemSelected ? {
-      width: '50%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px',
-      backgroundColor: 'lightgreen'
-    } : {
-      width: '50%',
-      height: '30px',
-      margin: '3px',
-      fontFamily: 'Arial',
-      fontSize: '19px'
-    }
+    style: item[0] === itemSelected ? _styles.rightButtonSelected : _styles.rightButton
   }), /*#__PURE__*/_react.default.createElement("div", null, `$${item[1].price}`))))));
 };
 
 var _default = Bill;
 exports.default = _default;
-},{"react-router-dom":"../node_modules/react-router-dom/index.js","axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js"}],"src/App.js":[function(require,module,exports) {
+},{"react-router-dom":"../node_modules/react-router-dom/index.js","axios":"../node_modules/axios/index.js","react":"../node_modules/react/index.js","../styles":"src/styles.js"}],"src/App.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -37865,7 +37938,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58048" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64155" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

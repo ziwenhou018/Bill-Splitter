@@ -1,6 +1,13 @@
+/* eslint-disable no-alert */
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import {
+  leftButton,
+  leftButtonSelected,
+  rightButton,
+  rightButtonSelected,
+} from '../styles'
 
 const Bill = () => {
   const [name, setName] = useState('New Bill')
@@ -14,6 +21,7 @@ const Bill = () => {
   const [itemPrice, setItemPrice] = useState('')
 
   const [total, setTotal] = useState(0)
+  const [payments, setPayments] = useState([])
   const [itemSelected, setItemSelected] = useState(null)
 
   const [isLoading, setIsLoading] = useState(true)
@@ -21,21 +29,68 @@ const Bill = () => {
   const { id } = useParams()
   const navigation = useNavigate()
 
-  const newItem = () => {
-    if (itemText in items) {
-      alert('Duplicate item name')
-    } else {
-      const dup = JSON.parse(JSON.stringify(items))
-      dup[itemText] = {
-        price: parseFloat(itemPrice),
-        members: [host],
-        taxed: true,
+  const setItemPriceModified = price => {
+    let periodCount = 0
+    let valsAfterPeriod = 0
+    for (let i = 0; i < price.length; i++) {
+      const c = price.charAt(i)
+
+      if (c === '.') {
+        if (i === 0) return
+        periodCount += 1
+        if (periodCount > 1) return
+      } else if (!(c >= '0' && c <= '9')) return
+      else if (periodCount > 0) {
+        valsAfterPeriod += 1
+        if (valsAfterPeriod > 2) return
       }
-      const dup2 = JSON.parse(JSON.stringify(members))
-      dup2[host].items.push(itemText)
-      setItems(dup)
-      setMembers(dup2)
-      setTotal(total + parseFloat(itemPrice))
+    }
+    setItemPrice(price)
+  }
+
+  const getItemPrice = () => parseFloat(itemPrice)
+
+  const setPaymentsModified = () => {
+    const dup = JSON.parse(JSON.stringify(payments))
+    let sum = 0
+    Object.entries(members).forEach(member => {
+      dup[member[0]] =
+        member[1].items.length > 0
+          ? member[1].items.reduce(
+              (prevVal, curVal) =>
+                prevVal +
+                Math.round(
+                  (items[curVal].price / items[curVal].members.length) * 100
+                ) /
+                  100,
+              0
+            )
+          : 0
+      sum += dup[member[0]]
+    })
+    dup[host] += total - sum
+    setPayments(dup)
+  }
+
+  const newItem = () => {
+    if (itemText && itemPrice) {
+      if (itemText in items) {
+        alert('Duplicate item name')
+      } else {
+        const dup = JSON.parse(JSON.stringify(items))
+        dup[itemText] = {
+          price: getItemPrice(),
+          members: [host],
+          taxed: true,
+        }
+        const dup2 = JSON.parse(JSON.stringify(members))
+        dup2[host].items.push(itemText)
+        setItems(dup)
+        setMembers(dup2)
+        setTotal(total + getItemPrice())
+      }
+    } else {
+      alert('Please fill out the name and price of the item')
     }
   }
 
@@ -47,7 +102,11 @@ const Bill = () => {
 
   const checkLoggedIn = async () => {
     const { data } = await axios.get('/account/isLoggedIn')
-    setUsername(data)
+    if (data) {
+      setUsername(data)
+    } else {
+      navigation('/login')
+    }
   }
 
   const onClickItem = item => {
@@ -82,13 +141,29 @@ const Bill = () => {
     }
   }
 
+  const removeItem = item => {
+    const dup = JSON.parse(JSON.stringify(items))
+    const dup2 = JSON.parse(JSON.stringify(members))
+    dup[item].members.forEach(member => {
+      dup2[member].items = dup2[member].items.filter(it => it !== item)
+    })
+    setTotal(total - dup[item].price)
+    delete dup[item]
+    setItems(dup)
+    setMembers(dup2)
+  }
+
   const refresh = async () => {
     const { data } = await axios.post('/api/', { id })
-    console.log(data)
     setName(data.name)
     setHost(data.host)
     setMembers(data.members)
     setItems(data.items)
+    const names = {}
+    Object.entries(data.members).forEach(member => {
+      names[member[0]] = 0
+    })
+    setPayments(names)
   }
 
   useEffect(() => {
@@ -98,7 +173,7 @@ const Bill = () => {
   useEffect(() => {
     if (host && members && items) {
       setIsLoading(false)
-      console.log(items)
+      setPaymentsModified()
     }
   }, [host, members, items])
 
@@ -118,7 +193,16 @@ const Bill = () => {
   return (
     <div>
       <div style={{ display: 'flex' }}>
-        <div className="title">Bill Splitter</div>
+        <div>
+          <div className="title">Bill Splitter</div>
+          <input
+            className="small-button"
+            type="button"
+            value="Back"
+            onClick={() => navigation('/')}
+          />
+        </div>
+
         {username ? (
           <div
             style={{
@@ -168,30 +252,19 @@ const Bill = () => {
           }}
         >
           {Object.entries(members).map(member => (
-            <div key={member[0]}>
+            <div key={member[0]} style={{ display: 'flex' }}>
               <input
+                className="selectable"
                 type="button"
                 value={member[0]}
                 onClick={() => onClickFriend(member[0])}
                 style={
                   members[member[0]].items.includes(itemSelected)
-                    ? {
-                        width: '80%',
-                        height: '30px',
-                        margin: '3px',
-                        fontFamily: 'Arial',
-                        fontSize: '19px',
-                        backgroundColor: 'lightgreen',
-                      }
-                    : {
-                        width: '80%',
-                        height: '30px',
-                        margin: '3px',
-                        fontFamily: 'Arial',
-                        fontSize: '19px',
-                      }
+                    ? leftButtonSelected
+                    : leftButton
                 }
               />
+              <div>{`$${payments[member[0]]}`}</div>
             </div>
           ))}
         </div>
@@ -208,6 +281,7 @@ const Bill = () => {
           {isEditingName ? (
             <div style={{ display: 'flex' }}>
               <input
+                className="small-input"
                 type="text"
                 onChange={e => setName(e.target.value)}
                 value={name}
@@ -234,14 +308,16 @@ const Bill = () => {
           <div>{`Total: $${total}`}</div>
           <div style={{ display: 'flex' }}>
             <input
+              className="small-input"
               type="text"
               onChange={e => setItemText(e.target.value)}
               value={itemText}
               placeholder="Fried rice"
             />
             <input
+              className="small-input"
               type="text"
-              onChange={e => setItemPrice(e.target.value)}
+              onChange={e => setItemPriceModified(e.target.value)}
               value={itemPrice}
               placeholder="4.99"
             />
@@ -255,38 +331,18 @@ const Bill = () => {
           {Object.entries(items).map(item => (
             <div key={item[0]} style={{ display: 'flex' }}>
               <input
+                className="remove"
                 type="button"
                 value="remove"
-                onClick={() => {}}
-                style={{
-                  width: '17%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
+                onClick={() => removeItem(item[0])}
               />
               <input
+                className="selectable"
                 type="button"
                 value={item[0]}
                 onClick={() => onClickItem(item[0])}
                 style={
-                  item[0] === itemSelected
-                    ? {
-                        width: '50%',
-                        height: '30px',
-                        margin: '3px',
-                        fontFamily: 'Arial',
-                        fontSize: '19px',
-                        backgroundColor: 'lightgreen',
-                      }
-                    : {
-                        width: '50%',
-                        height: '30px',
-                        margin: '3px',
-                        fontFamily: 'Arial',
-                        fontSize: '19px',
-                      }
+                  item[0] === itemSelected ? rightButtonSelected : rightButton
                 }
               />
               <div>{`$${item[1].price}`}</div>

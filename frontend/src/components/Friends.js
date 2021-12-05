@@ -2,7 +2,7 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import NewQuestion from './NewQuestion'
+import { leftButton, leftButtonSelected } from '../styles'
 
 const Friends = () => {
   const [username, setUsername] = useState(null)
@@ -12,6 +12,8 @@ const Friends = () => {
   const [requested, setRequested] = useState([])
   const [search, setSearch] = useState('')
   const [clickedOn, setClickedOn] = useState([])
+
+  const [isLoading, setIsLoading] = useState(true)
 
   const navigation = useNavigate()
 
@@ -23,63 +25,71 @@ const Friends = () => {
 
   const checkLoggedIn = async () => {
     const { data } = await axios.get('/account/isLoggedIn')
-    setUsername(data)
-  }
-
-  const requestFriend = () => {
-    if (search === username) {
-      alert('Cannot request self!')
-    } else if (search.length > 0) {
-      axios
-        .post('/account/requestFriend', { username, request: search })
-        .then(res => {
-          setRequested(res.data)
-          alert('Requested!')
-        })
-        .catch(err => {
-          alert(err.response.data.error)
-        })
+    if (data) {
+      setUsername(data)
+    } else {
+      navigation('/login')
     }
   }
 
-  const acceptRequest = request => {
-    axios
-      .post('/account/acceptRequest', { username, request })
-      .then(res => {
-        setFriends(res.data.friends)
-        setRequests(res.data.requests)
+  const requestFriend = async () => {
+    if (search === username) {
+      alert('Cannot request self!')
+    } else if (search.length > 0) {
+      const { data } = await axios.post('/account/requestFriend', {
+        username,
+        request: search,
       })
-      .catch(err => {
-        alert(err.response.data.error)
-      })
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data)
+      } else {
+        setRequested(data)
+        alert('Requested!')
+      }
+    }
   }
 
-  const declineRequest = request => {
-    axios
-      .post('/account/declineRequest', { username, request })
-      .then(res => {
-        setRequests(res.data)
-      })
-      .catch(err => {
-        alert(err.response.data.error)
-      })
+  const acceptRequest = async request => {
+    const { data } = await axios.post('/account/acceptRequest', {
+      username,
+      request,
+    })
+    if (typeof data === 'string' && data.startsWith('Error')) {
+      alert(data)
+    } else {
+      setFriends(data.friends)
+      setRequests(data.requests)
+    }
   }
 
-  const removeFriend = friend => {
-    axios
-      .post('/account/removeFriend', { username, friend })
-      .then(res => {
-        setFriends(res.data)
-        if (clickedOn.includes(friend)) {
-          setClickedOn(clickedOn.filter(user => user !== friend))
-        }
-      })
-      .catch(err => {
-        alert(err.response.data.error)
-      })
+  const declineRequest = async request => {
+    const { data } = await axios.post('/account/declineRequest', {
+      username,
+      request,
+    })
+    if (typeof data === 'string' && data.startsWith('Error')) {
+      alert(data)
+    } else {
+      setRequests(data)
+    }
   }
 
-  const newBill = () => {
+  const removeFriend = async friend => {
+    const { data } = await axios.post('/account/removeFriend', {
+      username,
+      friend,
+    })
+    if (typeof data === 'string' && data.startsWith('Error')) {
+      alert(data)
+    } else {
+      setFriends(data)
+      if (clickedOn.includes(friend)) {
+        setClickedOn(clickedOn.filter(user => user !== friend))
+      }
+    }
+  }
+
+  const newBill = async () => {
     if (clickedOn.length < 1) {
       if (friends.length > 0) {
         alert('Select at least 1 friend to create a bill')
@@ -87,14 +97,15 @@ const Friends = () => {
         alert('Add a friend first before creating a bill')
       }
     } else {
-      axios
-        .post('/api/new', { host: username, group: [...clickedOn, username] })
-        .then(res => {
-          navigation(`/bill/${res.data._id}`)
-        })
-        .catch(err => {
-          alert(err.response.data.error)
-        })
+      const { data } = await axios.post('/api/new', {
+        host: username,
+        group: [...clickedOn, username],
+      })
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data)
+      } else {
+        navigation(`/bill/${data._id}`)
+      }
     }
   }
 
@@ -121,6 +132,7 @@ const Friends = () => {
   useEffect(() => {
     if (username) {
       refresh()
+      setIsLoading(false)
       const interval = setInterval(() => {
         refresh()
       }, 2000)
@@ -128,14 +140,9 @@ const Friends = () => {
     }
   }, [username])
 
-  // useEffect(() => {
-  //   questions.forEach(question => {
-  //     if (currQuestion._id === question._id) {
-  //       setCurrQuestion(question)
-  //     }
-  //   })
-  // }, [questions])
-
+  if (isLoading) {
+    return <div />
+  }
   return (
     <div>
       <div style={{ display: 'flex' }}>
@@ -190,6 +197,7 @@ const Friends = () => {
         >
           <div style={{ display: 'flex' }}>
             <input
+              className="small-input"
               type="text"
               onChange={e => setSearch(e.target.value)}
               value={search}
@@ -203,130 +211,71 @@ const Friends = () => {
             />
           </div>
           <input
+            className="big-button"
             type="button"
             value="Create new bill"
             onClick={() => newBill()}
-            style={{
-              width: '97%',
-              height: '30px',
-              margin: '3px',
-              fontFamily: 'Arial',
-              fontSize: '19px',
-            }}
+            style={{ marginBottom: '20px' }}
           />
+          <div className="mini-title">Friends</div>
           {requests.map(request => (
-            <div key={request} style={{ display: 'flex' }}>
+            <div
+              key={request}
+              style={{ display: 'flex', marginBottom: '10px' }}
+            >
               <input
+                className="selectable"
                 type="button"
                 value={request}
                 onClick={() => {}}
-                style={{
-                  width: '50%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
               />
               <input
+                className="small-button"
                 type="button"
-                value="Accept"
+                value="accept"
                 onClick={() => acceptRequest(request)}
-                style={{
-                  width: '20%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
               />
               <input
+                className="small-button"
                 type="button"
-                value="Decline"
+                value="decline"
                 onClick={() => declineRequest(request)}
-                style={{
-                  width: '20%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
               />
             </div>
           ))}
           {friends.map(friend => (
-            <div key={friend} style={{ display: 'flex' }}>
+            <div key={friend} style={{ display: 'flex', marginBottom: '10px' }}>
               <input
+                className="remove"
                 type="button"
                 value="remove"
                 onClick={() => {
                   removeFriend(friend)
                 }}
-                style={{
-                  width: '17%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
               />
               <input
+                className="selectable"
                 type="button"
                 value={friend}
                 onClick={() => onClickFriend(friend)}
                 style={
-                  clickedOn.includes(friend)
-                    ? {
-                        width: '80%',
-                        height: '30px',
-                        margin: '3px',
-                        fontFamily: 'Arial',
-                        fontSize: '19px',
-                        backgroundColor: 'lightgreen',
-                      }
-                    : {
-                        width: '80%',
-                        height: '30px',
-                        margin: '3px',
-                        fontFamily: 'Arial',
-                        fontSize: '19px',
-                      }
+                  clickedOn.includes(friend) ? leftButtonSelected : leftButton
                 }
               />
             </div>
           ))}
+          <div className="mini-title">Requested</div>
           {requested.map(request => (
             <div key={request}>
               <input
+                className="selectable"
                 type="button"
                 value={request}
                 onClick={() => {}}
-                style={{
-                  width: '10%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
+                style={leftButton}
               />
             </div>
           ))}
-          {/* {questions.map(question => (
-            <div key={question._id}>
-              <input
-                type="button"
-                value={question.questionText}
-                onClick={() => onQuestionClick(question)}
-                style={{
-                  width: '97%',
-                  height: '30px',
-                  margin: '3px',
-                  fontFamily: 'Arial',
-                  fontSize: '19px',
-                }}
-              />
-            </div>
-          ))} */}
         </div>
         <div
           style={{
@@ -338,6 +287,10 @@ const Friends = () => {
             width: '70%',
           }}
         >
+          <div className="title">Past Transactions</div>
+          {/* {bills.forEach(bill => (
+            <div>{bill}</div>
+          ))} */}
           {/* {currQuestion._id ? (
             <div>
               <div

@@ -10,15 +10,18 @@ const Signup = () => {
   const navigation = useNavigate()
 
   const onClickSignUpButton = async () => {
-    try {
-      if (username && password) {
-        await axios.post('/account/signup', { username, password })
-        navigation('/login')
+    if (username && password) {
+      const { data } = await axios.post('/account/signup', {
+        username,
+        password,
+      })
+      if (typeof data === 'string' && data.startsWith('Error')) {
+        alert(data)
       } else {
-        alert('Username and password must not be empty!')
+        navigation('/login')
       }
-    } catch (err) {
-      alert(err.response.data.error)
+    } else {
+      alert('Username and password must not be empty!')
     }
   }
 
