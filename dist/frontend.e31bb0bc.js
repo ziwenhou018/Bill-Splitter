@@ -37610,6 +37610,7 @@ const Bill = () => {
   };
 
   const setTaxModified = newTax => {
+    if (newTax.length < 1) return;
     let periodCount = 0;
     let valsAfterPeriod = 0;
 
@@ -37630,6 +37631,7 @@ const Bill = () => {
   };
 
   const setTipModified = newTip => {
+    if (newTip.length < 1) return;
     let periodCount = 0;
     let valsAfterPeriod = 0;
 

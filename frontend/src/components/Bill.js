@@ -58,6 +58,7 @@ const Bill = () => {
   }
 
   const setTaxModified = newTax => {
+    if (newTax.length < 1) return
     let periodCount = 0
     let valsAfterPeriod = 0
     for (let i = 0; i < newTax.length; i++) {
@@ -76,6 +77,7 @@ const Bill = () => {
   }
 
   const setTipModified = newTip => {
+    if (newTip.length < 1) return
     let periodCount = 0
     let valsAfterPeriod = 0
     for (let i = 0; i < newTip.length; i++) {
