@@ -2,22 +2,36 @@ const express = require('express')
 
 const isAuthenticated = require('../middlewares/isAuthenticated')
 const User = require('../models/user')
+const Bill = require('../models/bill')
 
 const router = express.Router()
 
 router.get('/', isAuthenticated, async (req, res, next) => {
   try {
     const user = await User.findOne({ username: req.session.username })
-    req.session.bills = user.bills
-    req.session.friends = user.friends
-    req.session.requests = user.requests
-    req.session.requested = user.requested
-    console.log(user)
-    res.send({
-      bills: user.bills,
-      friends: user.friends,
-      requests: user.requests,
-      requested: user.requested,
+    const promises = []
+    const bills = {}
+    user.bills.forEach(bill => {
+      promises.push(
+        Bill.findOne({ _id: bill }).then(b => {
+          bills[bill] = {
+            name: b.name,
+            members: Array.from(b.members.entries()).map(member => member[0]),
+          }
+        })
+      )
+    })
+    Promise.allSettled(promises).then(() => {
+      req.session.bills = bills
+      req.session.friends = user.friends
+      req.session.requests = user.requests
+      req.session.requested = user.requested
+      res.send({
+        bills,
+        friends: user.friends,
+        requests: user.requests,
+        requested: user.requested,
+      })
     })
   } catch (err) {
     next(new Error('Cannot find account'))

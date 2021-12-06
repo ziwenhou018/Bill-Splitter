@@ -154,5 +154,15 @@ body {
   text-decoration: underline;
 }
 
+.description {
+  font-size: 18px;
+  margin: 5px;
+}
+
+.checkbox {
+  transform: scale(2);
+  margin: 10px;
+}
+
 
 /*# sourceMappingURL=/frontend.e31bb0bc.css.map */

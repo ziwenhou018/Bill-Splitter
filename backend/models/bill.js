@@ -3,6 +3,8 @@ const { Schema, model } = require('mongoose')
 const billSchema = new Schema({
   name: { type: String, required: true },
   host: { type: String, required: true },
+  tax: { type: Number, required: true },
+  tip: { type: Number, required: true },
   members: {
     type: Map,
     of: {

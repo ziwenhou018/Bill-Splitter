@@ -1,7 +1,8 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable no-alert */
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   leftButton,
   leftButtonSelected,
@@ -20,12 +21,21 @@ const Bill = () => {
   const [itemText, setItemText] = useState('')
   const [itemPrice, setItemPrice] = useState('')
 
-  const [total, setTotal] = useState(0)
+  const [tax, setTax] = useState('8')
+  const [isEditingTax, setIsEditingTax] = useState(false)
+  const [taxChecked, setTaxChecked] = useState(true)
+
+  const [tip, setTip] = useState('15')
+  const [isEditingTip, setIsEditingTip] = useState(false)
+
+  const [subtotal, setSubtotal] = useState('')
+  const [total, setTotal] = useState('')
   const [payments, setPayments] = useState([])
   const [itemSelected, setItemSelected] = useState(null)
 
   const [isLoading, setIsLoading] = useState(true)
 
+  const updates = useRef({ host, members, items })
   const { id } = useParams()
   const navigation = useNavigate()
 
@@ -34,7 +44,6 @@ const Bill = () => {
     let valsAfterPeriod = 0
     for (let i = 0; i < price.length; i++) {
       const c = price.charAt(i)
-
       if (c === '.') {
         if (i === 0) return
         periodCount += 1
@@ -48,28 +57,108 @@ const Bill = () => {
     setItemPrice(price)
   }
 
-  const getItemPrice = () => parseFloat(itemPrice)
+  const setTaxModified = newTax => {
+    let periodCount = 0
+    let valsAfterPeriod = 0
+    for (let i = 0; i < newTax.length; i++) {
+      const c = newTax.charAt(i)
+      if (c === '.') {
+        if (i === 0) return
+        periodCount += 1
+        if (periodCount > 1) return
+      } else if (!(c >= '0' && c <= '9')) return
+      else if (periodCount > 0) {
+        valsAfterPeriod += 1
+        if (valsAfterPeriod > 2) return
+      }
+    }
+    setTax(newTax)
+  }
 
-  const setPaymentsModified = () => {
-    const dup = JSON.parse(JSON.stringify(payments))
-    let sum = 0
-    Object.entries(members).forEach(member => {
-      dup[member[0]] =
-        member[1].items.length > 0
-          ? member[1].items.reduce(
-              (prevVal, curVal) =>
-                prevVal +
-                Math.round(
-                  (items[curVal].price / items[curVal].members.length) * 100
-                ) /
-                  100,
-              0
-            )
-          : 0
-      sum += dup[member[0]]
-    })
-    dup[host] += total - sum
-    setPayments(dup)
+  const setTipModified = newTip => {
+    let periodCount = 0
+    let valsAfterPeriod = 0
+    for (let i = 0; i < newTip.length; i++) {
+      const c = newTip.charAt(i)
+      if (c === '.') {
+        if (i === 0) return
+        periodCount += 1
+        if (periodCount > 1) return
+      } else if (!(c >= '0' && c <= '9')) return
+      else if (periodCount > 0) {
+        valsAfterPeriod += 1
+        if (valsAfterPeriod > 2) return
+      }
+    }
+    setTip(newTip)
+  }
+
+  const formatPrice = price => {
+    const strPrice = String(price)
+    let periodCount = 0
+    let valsAfterPeriod = 0
+    for (let i = 0; i < strPrice.length; i++) {
+      const c = strPrice.charAt(i)
+      if (c === '.') {
+        periodCount += 1
+      } else if (periodCount > 0) {
+        valsAfterPeriod += 1
+      }
+    }
+    if (periodCount === 0) {
+      return `${strPrice}.00`
+    }
+    if (valsAfterPeriod === 0) {
+      return `${strPrice}00`
+    }
+    if (valsAfterPeriod === 1) {
+      return `${strPrice}0`
+    }
+    return price
+  }
+
+  const updatePayments = () => {
+    if (members && items) {
+      const fTax = parseFloat(tax)
+      const fTip = parseFloat(tip)
+      const dup = {}
+      const dup2 = Object.entries(items).reduce(
+        (prev, curr) => prev + curr[1].price,
+        0
+      )
+      const dup3 = Math.round(
+        Object.entries(items).reduce(
+          (prev, curr) =>
+            prev +
+            curr[1].price *
+              (items[curr[0]].taxed ? 100 + fTax + fTip : 100 + fTip),
+          0
+        )
+      )
+
+      let sum = 0
+      Object.entries(members).forEach(member => {
+        dup[member[0]] =
+          member[1].items.length > 0
+            ? Math.round(
+                member[1].items.reduce(
+                  (prevVal, curVal) =>
+                    prevVal +
+                    (items[curVal].price / items[curVal].members.length) *
+                      (items[curVal].taxed ? 100 + fTax + fTip : 100 + fTip),
+                  0
+                )
+              ) / 100
+            : 0
+        sum += dup[member[0]] * 100
+      })
+      dup[host] *= 100
+      dup[host] = Math.round(dup[host] + dup3 - sum)
+      dup[host] /= 100
+      setPayments(dup)
+      setSubtotal(dup2)
+      setTotal(dup3 / 100)
+    }
   }
 
   const newItem = () => {
@@ -79,15 +168,14 @@ const Bill = () => {
       } else {
         const dup = JSON.parse(JSON.stringify(items))
         dup[itemText] = {
-          price: getItemPrice(),
+          price: parseFloat(itemPrice),
           members: [host],
-          taxed: true,
+          taxed: taxChecked,
         }
         const dup2 = JSON.parse(JSON.stringify(members))
         dup2[host].items.push(itemText)
         setItems(dup)
         setMembers(dup2)
-        setTotal(total + getItemPrice())
       }
     } else {
       alert('Please fill out the name and price of the item')
@@ -118,7 +206,7 @@ const Bill = () => {
   }
 
   const onClickFriend = friend => {
-    if (itemSelected) {
+    if (itemSelected && host === username) {
       if (items[itemSelected].members.includes(friend)) {
         const dup = JSON.parse(JSON.stringify(items))
         dup[itemSelected].members = dup[itemSelected].members.filter(
@@ -147,10 +235,21 @@ const Bill = () => {
     dup[item].members.forEach(member => {
       dup2[member].items = dup2[member].items.filter(it => it !== item)
     })
-    setTotal(total - dup[item].price)
     delete dup[item]
     setItems(dup)
     setMembers(dup2)
+  }
+
+  const save = async () => {
+    await axios.post('/api/save', {
+      _id: id,
+      name,
+      members,
+      items,
+      tax: parseFloat(tax),
+      tip: parseFloat(tip),
+    })
+    alert('Saved!')
   }
 
   const refresh = async () => {
@@ -159,11 +258,8 @@ const Bill = () => {
     setHost(data.host)
     setMembers(data.members)
     setItems(data.items)
-    const names = {}
-    Object.entries(data.members).forEach(member => {
-      names[member[0]] = 0
-    })
-    setPayments(names)
+    setTax(String(data.tax))
+    setTip(String(data.tip))
   }
 
   useEffect(() => {
@@ -171,19 +267,32 @@ const Bill = () => {
   }, [])
 
   useEffect(() => {
-    if (host && members && items) {
+    if (
+      host &&
+      members !== updates.current.members &&
+      items !== updates.current.items
+    ) {
+      updates.current = { members, items }
       setIsLoading(false)
-      setPaymentsModified()
+      updatePayments()
+      if (host !== username) {
+        const interval = setInterval(() => {
+          refresh()
+        }, 2000)
+        return () => clearInterval(interval)
+      }
     }
   }, [host, members, items])
 
   useEffect(() => {
+    if (host && members && items) {
+      updatePayments()
+    }
+  }, [tax, tip])
+
+  useEffect(() => {
     if (username) {
       refresh()
-      // const interval = setInterval(() => {
-      //   refresh()
-      // }, 2000)
-      // return () => clearInterval(interval)
     }
   }, [username])
 
@@ -264,7 +373,9 @@ const Bill = () => {
                     : leftButton
                 }
               />
-              <div>{`$${payments[member[0]]}`}</div>
+              <div className="description">{`$${formatPrice(
+                payments[member[0]]
+              )}`}</div>
             </div>
           ))}
         </div>
@@ -278,7 +389,9 @@ const Bill = () => {
             width: '70%',
           }}
         >
-          {isEditingName ? (
+          {host !== username ? (
+            <div className="title">{name}</div>
+          ) : isEditingName ? (
             <div style={{ display: 'flex' }}>
               <input
                 className="small-input"
@@ -303,39 +416,137 @@ const Bill = () => {
                 value="Edit"
                 onClick={() => setIsEditingName(true)}
               />
+              <input
+                className="small-button"
+                type="button"
+                value="Save"
+                onClick={() => save()}
+              />
             </div>
           )}
-          <div>{`Total: $${total}`}</div>
-          <div style={{ display: 'flex' }}>
-            <input
-              className="small-input"
-              type="text"
-              onChange={e => setItemText(e.target.value)}
-              value={itemText}
-              placeholder="Fried rice"
-            />
-            <input
-              className="small-input"
-              type="text"
-              onChange={e => setItemPriceModified(e.target.value)}
-              value={itemPrice}
-              placeholder="4.99"
-            />
-            <input
-              className="small-button"
-              type="button"
-              value="Add Item"
-              onClick={() => newItem()}
-            />
-          </div>
+          {host !== username ? (
+            <div className="description">{`Tax: $${formatPrice(
+              Math.round(subtotal * tax) / 100
+            )} (${tax}%)`}</div>
+          ) : isEditingTax ? (
+            <div style={{ display: 'flex' }}>
+              <input
+                className="small-input"
+                type="text"
+                onChange={e => setTaxModified(e.target.value)}
+                value={tax}
+                placeholder="8"
+              />
+              <input
+                className="small-button"
+                type="button"
+                value="Ok"
+                onClick={() => setIsEditingTax(false)}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex' }}>
+              <div className="description">{`Tax: $${formatPrice(
+                Math.round(subtotal * tax) / 100
+              )} (${tax}%)`}</div>
+              <input
+                className="small-button"
+                type="button"
+                value="Edit"
+                onClick={() => setIsEditingTax(true)}
+              />
+              <input
+                className="small-button"
+                type="button"
+                value="Save"
+                onClick={() => save()}
+              />
+            </div>
+          )}
+          {host !== username ? (
+            <div className="description">{`Tip: $${formatPrice(
+              Math.round(subtotal * tip) / 100
+            )} (${tip}%)`}</div>
+          ) : isEditingTip ? (
+            <div style={{ display: 'flex' }}>
+              <input
+                className="small-input"
+                type="text"
+                onChange={e => setTipModified(e.target.value)}
+                value={tip}
+                placeholder="8"
+              />
+              <input
+                className="small-button"
+                type="button"
+                value="Ok"
+                onClick={() => setIsEditingTip(false)}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex' }}>
+              <div className="description">{`Tip: $${formatPrice(
+                Math.round(subtotal * tip) / 100
+              )} (${tip}%)`}</div>
+              <input
+                className="small-button"
+                type="button"
+                value="Edit"
+                onClick={() => setIsEditingTip(true)}
+              />
+              <input
+                className="small-button"
+                type="button"
+                value="Save"
+                onClick={() => save()}
+              />
+            </div>
+          )}
+          <div className="description">{`Subtotal: $${formatPrice(
+            subtotal
+          )}`}</div>
+          <div className="description">{`Total: $${formatPrice(total)}`}</div>
+          {host === username ? (
+            <div style={{ display: 'flex' }}>
+              <input
+                className="small-input"
+                type="text"
+                onChange={e => setItemText(e.target.value)}
+                value={itemText}
+                placeholder="Fried rice"
+              />
+              <input
+                className="small-input"
+                type="text"
+                onChange={e => setItemPriceModified(e.target.value)}
+                value={itemPrice}
+                placeholder="4.99"
+              />
+              <div className="description">Taxed?</div>
+              <input
+                className="checkbox"
+                type="checkbox"
+                checked={taxChecked}
+                onChange={() => setTaxChecked(!taxChecked)}
+              />
+              <input
+                className="small-button"
+                type="button"
+                value="Add Item"
+                onClick={() => newItem()}
+              />
+            </div>
+          ) : null}
           {Object.entries(items).map(item => (
             <div key={item[0]} style={{ display: 'flex' }}>
-              <input
-                className="remove"
-                type="button"
-                value="remove"
-                onClick={() => removeItem(item[0])}
-              />
+              {host === username ? (
+                <input
+                  className="remove"
+                  type="button"
+                  value="remove"
+                  onClick={() => removeItem(item[0])}
+                />
+              ) : null}
               <input
                 className="selectable"
                 type="button"
@@ -345,7 +556,9 @@ const Bill = () => {
                   item[0] === itemSelected ? rightButtonSelected : rightButton
                 }
               />
-              <div>{`$${item[1].price}`}</div>
+              <div className="description">{`$${formatPrice(item[1].price)} ${
+                item[1].taxed ? '(taxed)' : ''
+              }`}</div>
             </div>
           ))}
         </div>

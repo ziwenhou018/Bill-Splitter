@@ -1,4 +1,5 @@
 const express = require('express')
+// const async = require('async')
 const { ObjectId } = require('mongodb')
 
 const isAuthenticated = require('../middlewares/isAuthenticated')
@@ -22,6 +23,8 @@ router.post('/new', async (req, res, next) => {
   const members = {}
   const items = {}
   const name = 'New Bill'
+  const tax = 8
+  const tip = 15
   group.forEach(member => {
     members[member] = { items: [] }
   })
@@ -31,12 +34,40 @@ router.post('/new', async (req, res, next) => {
       host,
       members,
       items,
+      tax,
+      tip,
     })
-    const user = await User.findOne({ username: host })
-    User.updateOne({ username: host }, { bills: [...user.bills, data._id] })
-    res.send(data)
+    const promises = []
+    group.forEach(member => {
+      promises.push(
+        User.updateOne(
+          { username: member },
+          { $push: { bills: data._id.toString() } }
+        )
+      )
+    })
+    Promise.allSettled(promises).then(() => res.send(data))
   } catch (err) {
     next(new Error('New bill error'))
+  }
+})
+
+router.post('/save', async (req, res, next) => {
+  const { _id, name, members, items, tip, tax } = req.body
+  try {
+    const data = await Bill.updateOne(
+      { _id },
+      {
+        name,
+        members,
+        items,
+        tip,
+        tax,
+      }
+    )
+    res.send(data)
+  } catch (err) {
+    next(new Error('Save bill error'))
   }
 })
 

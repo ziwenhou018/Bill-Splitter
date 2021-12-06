@@ -37232,7 +37232,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /* eslint-disable no-alert */
 const Friends = () => {
   const [username, setUsername] = (0, _react.useState)(null);
-  const [bills, setBills] = (0, _react.useState)([]);
+  const [bills, setBills] = (0, _react.useState)({});
   const [friends, setFriends] = (0, _react.useState)([]);
   const [requests, setRequests] = (0, _react.useState)([]);
   const [requested, setRequested] = (0, _react.useState)([]);
@@ -37370,6 +37370,7 @@ const Friends = () => {
     setRequested(data.requested);
   };
 
+  (0, _react.useEffect)(() => {}, [bills]);
   (0, _react.useEffect)(() => {
     checkLoggedIn();
   }, []);
@@ -37452,7 +37453,7 @@ const Friends = () => {
     value: "Create new bill",
     onClick: () => newBill(),
     style: {
-      marginBottom: '20px'
+      marginBottom: '10px'
     }
   }), /*#__PURE__*/_react.default.createElement("div", {
     className: "mini-title"
@@ -37466,7 +37467,8 @@ const Friends = () => {
     className: "selectable",
     type: "button",
     value: request,
-    onClick: () => {}
+    onClick: () => {},
+    style: _styles.leftButton
   }), /*#__PURE__*/_react.default.createElement("input", {
     className: "small-button",
     type: "button",
@@ -37517,7 +37519,18 @@ const Friends = () => {
     }
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "title"
-  }, "Past Transactions"))));
+  }, "Past Transactions"), Object.entries(bills).map(bill => /*#__PURE__*/_react.default.createElement("div", {
+    key: bill[0],
+    style: {
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "selectable",
+    type: "button",
+    value: bill[1].name,
+    onClick: () => navigation(`/bill/${bill[0]}`),
+    style: _styles.rightButton
+  }), /*#__PURE__*/_react.default.createElement("div", null, `{${bill[1].members.reduce((prev, curr) => `${prev} - ${curr}`, '')} - }`))))));
 };
 
 var _default = Friends;
@@ -37544,6 +37557,8 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/* eslint-disable no-nested-ternary */
+
 /* eslint-disable no-alert */
 const Bill = () => {
   const [name, setName] = (0, _react.useState)('New Bill');
@@ -37554,10 +37569,21 @@ const Bill = () => {
   const [isEditingName, setIsEditingName] = (0, _react.useState)(false);
   const [itemText, setItemText] = (0, _react.useState)('');
   const [itemPrice, setItemPrice] = (0, _react.useState)('');
-  const [total, setTotal] = (0, _react.useState)(0);
+  const [tax, setTax] = (0, _react.useState)('8');
+  const [isEditingTax, setIsEditingTax] = (0, _react.useState)(false);
+  const [taxChecked, setTaxChecked] = (0, _react.useState)(true);
+  const [tip, setTip] = (0, _react.useState)('15');
+  const [isEditingTip, setIsEditingTip] = (0, _react.useState)(false);
+  const [subtotal, setSubtotal] = (0, _react.useState)('');
+  const [total, setTotal] = (0, _react.useState)('');
   const [payments, setPayments] = (0, _react.useState)([]);
   const [itemSelected, setItemSelected] = (0, _react.useState)(null);
   const [isLoading, setIsLoading] = (0, _react.useState)(true);
+  const updates = (0, _react.useRef)({
+    host,
+    members,
+    items
+  });
   const {
     id
   } = (0, _reactRouterDom.useParams)();
@@ -37583,17 +37609,95 @@ const Bill = () => {
     setItemPrice(price);
   };
 
-  const getItemPrice = () => parseFloat(itemPrice);
+  const setTaxModified = newTax => {
+    let periodCount = 0;
+    let valsAfterPeriod = 0;
 
-  const setPaymentsModified = () => {
-    const dup = JSON.parse(JSON.stringify(payments));
-    let sum = 0;
-    Object.entries(members).forEach(member => {
-      dup[member[0]] = member[1].items.length > 0 ? member[1].items.reduce((prevVal, curVal) => prevVal + Math.round(items[curVal].price / items[curVal].members.length * 100) / 100, 0) : 0;
-      sum += dup[member[0]];
-    });
-    dup[host] += total - sum;
-    setPayments(dup);
+    for (let i = 0; i < newTax.length; i++) {
+      const c = newTax.charAt(i);
+
+      if (c === '.') {
+        if (i === 0) return;
+        periodCount += 1;
+        if (periodCount > 1) return;
+      } else if (!(c >= '0' && c <= '9')) return;else if (periodCount > 0) {
+        valsAfterPeriod += 1;
+        if (valsAfterPeriod > 2) return;
+      }
+    }
+
+    setTax(newTax);
+  };
+
+  const setTipModified = newTip => {
+    let periodCount = 0;
+    let valsAfterPeriod = 0;
+
+    for (let i = 0; i < newTip.length; i++) {
+      const c = newTip.charAt(i);
+
+      if (c === '.') {
+        if (i === 0) return;
+        periodCount += 1;
+        if (periodCount > 1) return;
+      } else if (!(c >= '0' && c <= '9')) return;else if (periodCount > 0) {
+        valsAfterPeriod += 1;
+        if (valsAfterPeriod > 2) return;
+      }
+    }
+
+    setTip(newTip);
+  };
+
+  const formatPrice = price => {
+    const strPrice = String(price);
+    let periodCount = 0;
+    let valsAfterPeriod = 0;
+
+    for (let i = 0; i < strPrice.length; i++) {
+      const c = strPrice.charAt(i);
+
+      if (c === '.') {
+        periodCount += 1;
+      } else if (periodCount > 0) {
+        valsAfterPeriod += 1;
+      }
+    }
+
+    if (periodCount === 0) {
+      return `${strPrice}.00`;
+    }
+
+    if (valsAfterPeriod === 0) {
+      return `${strPrice}00`;
+    }
+
+    if (valsAfterPeriod === 1) {
+      return `${strPrice}0`;
+    }
+
+    return price;
+  };
+
+  const updatePayments = () => {
+    if (members && items) {
+      const fTax = parseFloat(tax);
+      const fTip = parseFloat(tip);
+      const dup = {};
+      const dup2 = Object.entries(items).reduce((prev, curr) => prev + curr[1].price, 0);
+      const dup3 = Math.round(Object.entries(items).reduce((prev, curr) => prev + curr[1].price * (items[curr[0]].taxed ? 100 + fTax + fTip : 100 + fTip), 0));
+      let sum = 0;
+      Object.entries(members).forEach(member => {
+        dup[member[0]] = member[1].items.length > 0 ? Math.round(member[1].items.reduce((prevVal, curVal) => prevVal + items[curVal].price / items[curVal].members.length * (items[curVal].taxed ? 100 + fTax + fTip : 100 + fTip), 0)) / 100 : 0;
+        sum += dup[member[0]] * 100;
+      });
+      dup[host] *= 100;
+      dup[host] = Math.round(dup[host] + dup3 - sum);
+      dup[host] /= 100;
+      setPayments(dup);
+      setSubtotal(dup2);
+      setTotal(dup3 / 100);
+    }
   };
 
   const newItem = () => {
@@ -37603,15 +37707,14 @@ const Bill = () => {
       } else {
         const dup = JSON.parse(JSON.stringify(items));
         dup[itemText] = {
-          price: getItemPrice(),
+          price: parseFloat(itemPrice),
           members: [host],
-          taxed: true
+          taxed: taxChecked
         };
         const dup2 = JSON.parse(JSON.stringify(members));
         dup2[host].items.push(itemText);
         setItems(dup);
         setMembers(dup2);
-        setTotal(total + getItemPrice());
       }
     } else {
       alert('Please fill out the name and price of the item');
@@ -37645,7 +37748,7 @@ const Bill = () => {
   };
 
   const onClickFriend = friend => {
-    if (itemSelected) {
+    if (itemSelected && host === username) {
       if (items[itemSelected].members.includes(friend)) {
         const dup = JSON.parse(JSON.stringify(items));
         dup[itemSelected].members = dup[itemSelected].members.filter(user => user !== friend);
@@ -37670,10 +37773,21 @@ const Bill = () => {
     dup[item].members.forEach(member => {
       dup2[member].items = dup2[member].items.filter(it => it !== item);
     });
-    setTotal(total - dup[item].price);
     delete dup[item];
     setItems(dup);
     setMembers(dup2);
+  };
+
+  const save = async () => {
+    await _axios.default.post('/api/save', {
+      _id: id,
+      name,
+      members,
+      items,
+      tax: parseFloat(tax),
+      tip: parseFloat(tip)
+    });
+    alert('Saved!');
   };
 
   const refresh = async () => {
@@ -37686,28 +37800,38 @@ const Bill = () => {
     setHost(data.host);
     setMembers(data.members);
     setItems(data.items);
-    const names = {};
-    Object.entries(data.members).forEach(member => {
-      names[member[0]] = 0;
-    });
-    setPayments(names);
+    setTax(String(data.tax));
+    setTip(String(data.tip));
   };
 
   (0, _react.useEffect)(() => {
     checkLoggedIn();
   }, []);
   (0, _react.useEffect)(() => {
-    if (host && members && items) {
+    if (host && members !== updates.current.members && items !== updates.current.items) {
+      updates.current = {
+        members,
+        items
+      };
       setIsLoading(false);
-      setPaymentsModified();
+      updatePayments();
+
+      if (host !== username) {
+        const interval = setInterval(() => {
+          refresh();
+        }, 2000);
+        return () => clearInterval(interval);
+      }
     }
   }, [host, members, items]);
   (0, _react.useEffect)(() => {
+    if (host && members && items) {
+      updatePayments();
+    }
+  }, [tax, tip]);
+  (0, _react.useEffect)(() => {
     if (username) {
-      refresh(); // const interval = setInterval(() => {
-      //   refresh()
-      // }, 2000)
-      // return () => clearInterval(interval)
+      refresh();
     }
   }, [username]);
 
@@ -37774,7 +37898,9 @@ const Bill = () => {
     value: member[0],
     onClick: () => onClickFriend(member[0]),
     style: members[member[0]].items.includes(itemSelected) ? _styles.leftButtonSelected : _styles.leftButton
-  }), /*#__PURE__*/_react.default.createElement("div", null, `$${payments[member[0]]}`)))), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `$${formatPrice(payments[member[0]])}`)))), /*#__PURE__*/_react.default.createElement("div", {
     style: {
       backgroundColor: 'lightgray',
       padding: '5px',
@@ -37783,7 +37909,9 @@ const Bill = () => {
       borderColor: 'gray',
       width: '70%'
     }
-  }, isEditingName ? /*#__PURE__*/_react.default.createElement("div", {
+  }, host !== username ? /*#__PURE__*/_react.default.createElement("div", {
+    className: "title"
+  }, name) : isEditingName ? /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: 'flex'
     }
@@ -37809,7 +37937,82 @@ const Bill = () => {
     type: "button",
     value: "Edit",
     onClick: () => setIsEditingName(true)
-  })), /*#__PURE__*/_react.default.createElement("div", null, `Total: $${total}`), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Save",
+    onClick: () => save()
+  })), host !== username ? /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `Tax: $${formatPrice(Math.round(subtotal * tax) / 100)} (${tax}%)`) : isEditingTax ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-input",
+    type: "text",
+    onChange: e => setTaxModified(e.target.value),
+    value: tax,
+    placeholder: "8"
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Ok",
+    onClick: () => setIsEditingTax(false)
+  })) : /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `Tax: $${formatPrice(Math.round(subtotal * tax) / 100)} (${tax}%)`), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Edit",
+    onClick: () => setIsEditingTax(true)
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Save",
+    onClick: () => save()
+  })), host !== username ? /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `Tip: $${formatPrice(Math.round(subtotal * tip) / 100)} (${tip}%)`) : isEditingTip ? /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-input",
+    type: "text",
+    onChange: e => setTipModified(e.target.value),
+    value: tip,
+    placeholder: "8"
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Ok",
+    onClick: () => setIsEditingTip(false)
+  })) : /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      display: 'flex'
+    }
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `Tip: $${formatPrice(Math.round(subtotal * tip) / 100)} (${tip}%)`), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Edit",
+    onClick: () => setIsEditingTip(true)
+  }), /*#__PURE__*/_react.default.createElement("input", {
+    className: "small-button",
+    type: "button",
+    value: "Save",
+    onClick: () => save()
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `Subtotal: $${formatPrice(subtotal)}`), /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `Total: $${formatPrice(total)}`), host === username ? /*#__PURE__*/_react.default.createElement("div", {
     style: {
       display: 'flex'
     }
@@ -37825,28 +38028,37 @@ const Bill = () => {
     onChange: e => setItemPriceModified(e.target.value),
     value: itemPrice,
     placeholder: "4.99"
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, "Taxed?"), /*#__PURE__*/_react.default.createElement("input", {
+    className: "checkbox",
+    type: "checkbox",
+    checked: taxChecked,
+    onChange: () => setTaxChecked(!taxChecked)
   }), /*#__PURE__*/_react.default.createElement("input", {
     className: "small-button",
     type: "button",
     value: "Add Item",
     onClick: () => newItem()
-  })), Object.entries(items).map(item => /*#__PURE__*/_react.default.createElement("div", {
+  })) : null, Object.entries(items).map(item => /*#__PURE__*/_react.default.createElement("div", {
     key: item[0],
     style: {
       display: 'flex'
     }
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, host === username ? /*#__PURE__*/_react.default.createElement("input", {
     className: "remove",
     type: "button",
     value: "remove",
     onClick: () => removeItem(item[0])
-  }), /*#__PURE__*/_react.default.createElement("input", {
+  }) : null, /*#__PURE__*/_react.default.createElement("input", {
     className: "selectable",
     type: "button",
     value: item[0],
     onClick: () => onClickItem(item[0]),
     style: item[0] === itemSelected ? _styles.rightButtonSelected : _styles.rightButton
-  }), /*#__PURE__*/_react.default.createElement("div", null, `$${item[1].price}`))))));
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: "description"
+  }, `$${formatPrice(item[1].price)} ${item[1].taxed ? '(taxed)' : ''}`))))));
 };
 
 var _default = Bill;
@@ -37938,7 +38150,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64155" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58053" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -2,11 +2,16 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { leftButton, leftButtonSelected } from '../styles'
+import {
+  leftButton,
+  leftButtonSelected,
+  rightButton,
+  rightButtonSelected,
+} from '../styles'
 
 const Friends = () => {
   const [username, setUsername] = useState(null)
-  const [bills, setBills] = useState([])
+  const [bills, setBills] = useState({})
   const [friends, setFriends] = useState([])
   const [requests, setRequests] = useState([])
   const [requested, setRequested] = useState([])
@@ -125,6 +130,8 @@ const Friends = () => {
     setRequested(data.requested)
   }
 
+  useEffect(() => {}, [bills])
+
   useEffect(() => {
     checkLoggedIn()
   }, [])
@@ -215,7 +222,7 @@ const Friends = () => {
             type="button"
             value="Create new bill"
             onClick={() => newBill()}
-            style={{ marginBottom: '20px' }}
+            style={{ marginBottom: '10px' }}
           />
           <div className="mini-title">Friends</div>
           {requests.map(request => (
@@ -228,6 +235,7 @@ const Friends = () => {
                 type="button"
                 value={request}
                 onClick={() => {}}
+                style={leftButton}
               />
               <input
                 className="small-button"
@@ -288,54 +296,23 @@ const Friends = () => {
           }}
         >
           <div className="title">Past Transactions</div>
-          {/* {bills.forEach(bill => (
-            <div>{bill}</div>
-          ))} */}
-          {/* {currQuestion._id ? (
-            <div>
-              <div
-                style={{
-                  backgroundColor: 'white',
-                  padding: '5px',
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: 'gray',
-                  width: '99%',
-                }}
-              >
-                <div style={{ fontSize: '24px', margin: '3px' }}>
-                  {currQuestion.questionText}
-                </div>
-                <div style={{ fontWeight: 'bold', margin: '3px' }}>Author:</div>
-                <div style={{ margin: '3px' }}>{currQuestion.author}</div>
-                <div style={{ fontWeight: 'bold', margin: '3px' }}>Answer:</div>
-                <div style={{ margin: '3px' }}>{currQuestion.answer}</div>
+          {Object.entries(bills).map(bill => (
+            <div key={bill[0]} style={{ marginBottom: '10px' }}>
+              <input
+                className="selectable"
+                type="button"
+                value={bill[1].name}
+                onClick={() => navigation(`/bill/${bill[0]}`)}
+                style={rightButton}
+              />
+              <div>
+                {`{${bill[1].members.reduce(
+                  (prev, curr) => `${prev} - ${curr}`,
+                  ''
+                )} - }`}
               </div>
-              {username ? (
-                <div>
-                  <div>Answer this question:</div>
-                  <div>
-                    <textarea
-                      cols="112"
-                      rows="8"
-                      className="small-input"
-                      type="text"
-                      value={answer}
-                      onChange={event => setAnswer(event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      className="small-button"
-                      type="button"
-                      value="Submit"
-                      onClick={submitAnswer}
-                    />
-                  </div>
-                </div>
-              ) : null}
             </div>
-          ) : null} */}
+          ))}
         </div>
       </div>
     </div>
